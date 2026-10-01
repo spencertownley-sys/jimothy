@@ -1,0 +1,57 @@
+[
+  {
+    "id": "1-1",
+    "world": 1,
+    "name": "Welcome to Ballard",
+    "file": "1-1.tmj",
+    "music": "ballard",
+    "parallaxSet": "ballard",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 90,
+    "next": "1-2",
+    "map": { "x": 250, "y": 500 }
+  },
+  {
+    "id": "1-1-bonus",
+    "world": 1,
+    "name": "Storm Drain",
+    "file": "1-1-bonus.tmj",
+    "music": "drain",
+    "parallaxSet": "drain",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 0,
+    "hidden": true,
+    "parent": "1-1"
+  },
+  {
+    "id": "1-2",
+    "world": 1,
+    "name": "The Locks",
+    "file": null,
+    "music": "ballard",
+    "parallaxSet": "ballard",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 120,
+    "next": "1-3",
+    "map": { "x": 470, "y": 420 }
+  },
+  {
+    "id": "1-3",
+    "world": 1,
+    "name": "Golden Gardens at Dusk",
+    "file": null,
+    "music": "ballard",
+    "parallaxSet": "ballard",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 105,
+    "map": { "x": 700, "y": 330 }
+  }
+]

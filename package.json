@@ -1,0 +1,32 @@
+{
+  "name": "jimothy",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "JIMOTHY: A Seattle Story — a Mario-style platformer starring Ballard's short-spined raccoon",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src tests scripts",
+    "format": "prettier --write src tests scripts",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "gen:level": "node scripts/gen-level.mjs",
+    "gen:art": "bash scripts/gen-art.sh",
+    "pack:atlases": "node scripts/pack-atlases.mjs"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  }
+}

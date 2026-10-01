@@ -1,0 +1,214 @@
+{
+ "frames": {
+  "geoduck": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 50,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 44
+   }
+  },
+  "doubleshot": {
+   "frame": {
+    "x": 54,
+    "y": 2,
+    "w": 67,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 40
+   }
+  },
+  "flannel": {
+   "frame": {
+    "x": 123,
+    "y": 2,
+    "w": 40,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 40,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 40,
+    "h": 40
+   }
+  },
+  "flower": {
+   "frame": {
+    "x": 165,
+    "y": 2,
+    "w": 40,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 40,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 40,
+    "h": 40
+   }
+  },
+  "jacket": {
+   "frame": {
+    "x": 207,
+    "y": 2,
+    "w": 38,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 38,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 38,
+    "h": 40
+   }
+  },
+  "salmon": {
+   "frame": {
+    "x": 247,
+    "y": 2,
+    "w": 42,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 42,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 42,
+    "h": 40
+   }
+  },
+  "star": {
+   "frame": {
+    "x": 291,
+    "y": 2,
+    "w": 39,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 39,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 39,
+    "h": 40
+   }
+  },
+  "teriyaki": {
+   "frame": {
+    "x": 332,
+    "y": 2,
+    "w": 45,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 45,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 45,
+    "h": 40
+   }
+  },
+  "ticket": {
+   "frame": {
+    "x": 379,
+    "y": 2,
+    "w": 48,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 40
+   }
+  },
+  "latte": {
+   "frame": {
+    "x": 429,
+    "y": 2,
+    "w": 30,
+    "h": 36
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 30,
+    "h": 36
+   },
+   "sourceSize": {
+    "w": 30,
+    "h": 36
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "items.png",
+  "size": {
+   "w": 461,
+   "h": 48
+  },
+  "scale": "1"
+ }
+}

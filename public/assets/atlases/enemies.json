@@ -1,0 +1,174 @@
+{
+ "frames": {
+  "freeze": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 89,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 89,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 89,
+    "h": 96
+   }
+  },
+  "goose": {
+   "frame": {
+    "x": 93,
+    "y": 2,
+    "w": 80,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 80
+   }
+  },
+  "cart": {
+   "frame": {
+    "x": 175,
+    "y": 2,
+    "w": 73,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 73,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 73,
+    "h": 64
+   }
+  },
+  "cone": {
+   "frame": {
+    "x": 250,
+    "y": 2,
+    "w": 35,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 35,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 35,
+    "h": 56
+   }
+  },
+  "scooter": {
+   "frame": {
+    "x": 287,
+    "y": 2,
+    "w": 68,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 68,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 68,
+    "h": 56
+   }
+  },
+  "crow": {
+   "frame": {
+    "x": 357,
+    "y": 2,
+    "w": 60,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 44
+   }
+  },
+  "seagull": {
+   "frame": {
+    "x": 419,
+    "y": 2,
+    "w": 85,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 85,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 85,
+    "h": 44
+   }
+  },
+  "slug": {
+   "frame": {
+    "x": 506,
+    "y": 2,
+    "w": 80,
+    "h": 36
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 36
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 36
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "enemies.png",
+  "size": {
+   "w": 588,
+   "h": 100
+  },
+  "scale": "1"
+ }
+}

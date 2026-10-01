@@ -1,0 +1,74 @@
+{
+ "frames": {
+  "geoduck_silhouette": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 50,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 44
+   }
+  },
+  "heart_empty": {
+   "frame": {
+    "x": 54,
+    "y": 2,
+    "w": 31,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 31,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 31,
+    "h": 32
+   }
+  },
+  "heart_full": {
+   "frame": {
+    "x": 87,
+    "y": 2,
+    "w": 31,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 31,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 31,
+    "h": 32
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "ui.png",
+  "size": {
+   "w": 120,
+   "h": 48
+  },
+  "scale": "1"
+ }
+}
