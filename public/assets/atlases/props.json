@@ -1,0 +1,274 @@
+{
+ "frames": {
+  "cedar": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 223,
+    "h": 430
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 223,
+    "h": 430
+   },
+   "sourceSize": {
+    "w": 223,
+    "h": 430
+   }
+  },
+  "signboard": {
+   "frame": {
+    "x": 227,
+    "y": 2,
+    "w": 320,
+    "h": 325
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 325
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 325
+   }
+  },
+  "busstop": {
+   "frame": {
+    "x": 549,
+    "y": 2,
+    "w": 78,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 78,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 78,
+    "h": 150
+   }
+  },
+  "column": {
+   "frame": {
+    "x": 629,
+    "y": 2,
+    "w": 14,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 96
+   }
+  },
+  "freebox": {
+   "frame": {
+    "x": 645,
+    "y": 2,
+    "w": 99,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 99,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 99,
+    "h": 96
+   }
+  },
+  "bin_black": {
+   "frame": {
+    "x": 746,
+    "y": 2,
+    "w": 54,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 54,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 54,
+    "h": 72
+   }
+  },
+  "bin_blue": {
+   "frame": {
+    "x": 802,
+    "y": 2,
+    "w": 56,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 72
+   }
+  },
+  "bin_green": {
+   "frame": {
+    "x": 860,
+    "y": 2,
+    "w": 55,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 55,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 55,
+    "h": 72
+   }
+  },
+  "stump": {
+   "frame": {
+    "x": 917,
+    "y": 2,
+    "w": 101,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 101,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 101,
+    "h": 64
+   }
+  },
+  "compost": {
+   "frame": {
+    "x": 1020,
+    "y": 2,
+    "w": 57,
+    "h": 62
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 62
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 62
+   }
+  },
+  "fern": {
+   "frame": {
+    "x": 1079,
+    "y": 2,
+    "w": 83,
+    "h": 60
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 60
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 60
+   }
+  },
+  "lantern": {
+   "frame": {
+    "x": 1164,
+    "y": 2,
+    "w": 34,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 34,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 34,
+    "h": 44
+   }
+  },
+  "puddle": {
+   "frame": {
+    "x": 1200,
+    "y": 2,
+    "w": 96,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 34
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "props.png",
+  "size": {
+   "w": 1298,
+   "h": 434
+  },
+  "scale": "1"
+ }
+}

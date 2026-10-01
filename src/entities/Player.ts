@@ -254,6 +254,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Keep feet anchored: origin is (0.5, 1) so only the top of the box moves.
     this.body.setSize(box.w, box.h, false);
     this.body.setOffset((fw - box.w) / 2, fh - box.h);
+    // Re-anchor now: physics catch-up sub-steps skip preUpdate, so a body that grew while keeping
+    // its old top-left would start the next sub-step sunk into the floor and fall through it.
+    // Shift the previous-position records by the same amount, or Body.postUpdate would read the
+    // re-anchor as motion and move the sprite with it.
+    const b = this.body;
+    const ox = b.position.x;
+    const oy = b.position.y;
+    b.updateFromGameObject();
+    const dx = b.position.x - ox;
+    const dy = b.position.y - oy;
+    b.prev.x += dx;
+    b.prev.y += dy;
+    b.prevFrame.x += dx;
+    b.prevFrame.y += dy;
   }
 
   private updateVisuals(dtMs: number): void {

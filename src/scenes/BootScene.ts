@@ -4,7 +4,7 @@ import { ensurePlaceholders } from '../core/placeholders';
 import { LEVELS } from '../levels/LevelDef';
 import { COLORS, uiText } from '../ui/text';
 
-const ATLASES = ['jimothy', 'enemies', 'items', 'blocks', 'ui'];
+const ATLASES = ['jimothy', 'enemies', 'items', 'blocks', 'ui', 'props'];
 
 /** Loads the World 1 pack: atlases, backgrounds, tileset, maps. Everything else lazy-loads later. */
 export class BootScene extends Phaser.Scene {

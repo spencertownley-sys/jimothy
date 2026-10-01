@@ -67,7 +67,7 @@ window.addEventListener('visibilitychange', () => {
 // test hooks (Playwright reads these)
 declare global {
   interface Window {
-    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; activeScenes: () => string[] };
+    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; activeScenes: () => string[] };
   }
 }
 window.__jimothy = {
@@ -88,6 +88,10 @@ window.__jimothy = {
   teleport: (x: number, y: number) => {
     const s = game.scene.getScene('Game') as GameScene | null;
     if (s && game.scene.isActive('Game')) s.teleport(x, y);
+  },
+  power: (kind) => {
+    const s = game.scene.getScene('Game') as GameScene | null;
+    if (s && game.scene.isActive('Game')) s.devPower(kind);
   },
   items: () => {
     const s = game.scene.getScene('Game') as GameScene | null;

@@ -1,7 +1,7 @@
 # Credits & licences
 
 - Game design, art direction, writing — Spencer Townley
-- Concept art — generated with Higgsfield (nano_banana_pro); placeholder sprites are cut from those sheets
+- All game art — generated with Higgsfield (Nano Banana); sprites, tiles, props and backgrounds are cut from those images (see `art/higgsfield/README.md`)
 - Engine — [Phaser 3](https://phaser.io) (MIT)
 - Tooling — Vite, TypeScript, Vitest, Playwright, ESLint, Prettier (MIT); ImageMagick for the art pipeline
 - Fonts — none shipped yet; the UI asks for Fredoka / Baloo 2 / Nunito (all OFL) and falls back to system fonts

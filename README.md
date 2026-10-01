@@ -26,7 +26,7 @@ Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 | `npm run build` | typecheck + static build to `dist/` (`base: './'`, so it works from any Pages subpath) |
 | `npm run lint` / `npm run test` | ESLint · Vitest (input edge detection, jump-feel sim, save migration) |
 | `npm run test:e2e` | Playwright smoke test: boots, starts 1-1, runs right, no console errors. Set `CHROMIUM_PATH` to use a preinstalled Chromium. |
-| `npm run gen:art` | cuts placeholder sprites from the concept sheets in `art/concept`, draws the World 1 tileset and parallax layers (needs ImageMagick) |
+| `npm run gen:art` | builds every sprite, the World 1 tileset and the parallax layers from the Higgsfield images (needs ImageMagick) |
 | `npm run pack:atlases` | packs `art/sprites/*` into `public/assets/atlases/*.png + .json` |
 | `npm run gen:level` | regenerates `public/assets/maps/1-1.tmj` and `1-1-bonus.tmj` from `scripts/gen-level.mjs` |
 | `node scripts/dev/flow.mjs out/` | dev probe that drives the built game through the whole 1-1 flow and screenshots each screen |
@@ -45,16 +45,20 @@ src/
   scenes/                Boot, Title, Intro, WorldMap, Game, HUD, Pause, Options, Gallery, Credits, LevelClear, GameOver
   ui/                    TouchControls overlay, Menu, text styles
 public/assets/           atlases, backgrounds, tilesets, maps (Tiled .tmj)
-art/concept              the Higgsfield concept sheets (reference, not shipped)
+art/concept              Higgsfield concept sheets (characters, enemies, items)
+art/higgsfield           Higgsfield World 1 generations (tiles, blocks, props, backgrounds)
 art/sprites              cut frames that get packed into atlases — replace a PNG and re-pack to swap art
 ```
 
 ## Art & audio
 
-Everything on screen is a placeholder cut straight from the concept sheets (one frame per pose,
-no real animation yet) or drawn by `scripts/gen-art.sh`. Swapping in production art is a file
-replace in `art/sprites/<atlas>/<frame>.png` followed by `npm run pack:atlases`; missing atlases
-fall back to labelled rectangles rather than crashing. All music and SFX are synthesized in
+All art is Higgsfield output. Jimothy, enemies and items are cut from the concept sheets in
+`art/concept`. Tiles, blocks, props (trees, bins, signs, porch) and parallax layers are cut from
+the World 1 generations in `art/higgsfield`, listed with their job ids in that folder's README.
+`npm run gen:art` rebuilds everything from those images; swapping art is a file replace there
+followed by `npm run gen:art && npm run pack:atlases`. Decor is placed as `prop` objects in the
+map so each sprite keeps its painted shape instead of being chopped into tiles. Each sprite is a
+single pose for now (no frame-by-frame animation yet). All music and SFX are synthesized in
 `AudioManager` until real tracks land in `public/assets/audio/`.
 
 Deviation from the spec worth knowing: `JUMP_HOLD_GRAVITY_SCALE` is 0.6 (spec says 0.45) because

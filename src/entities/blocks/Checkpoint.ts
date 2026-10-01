@@ -14,8 +14,11 @@ export class Checkpoint extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this, true);
     this.setOrigin(0.5, 1);
     this.setDepth(2);
-    this.body.setSize(40, 90);
-    this.body.setOffset(12, 6);
+    // touch zone: the lower 90 % of the stand, a little narrower than the art
+    const w = this.width * 0.6;
+    const h = this.height * 0.9;
+    this.body.setSize(w, h);
+    this.body.setOffset((this.width - w) / 2, this.height - h);
   }
 
   activate(): void {

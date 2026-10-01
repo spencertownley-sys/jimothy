@@ -13,11 +13,15 @@ const REQUIRED: Record<string, Record<string, [number, number]>> = {
   },
   enemies: { seagull: [84, 44], crow: [60, 44], freeze: [90, 96], scooter: [68, 56], cone: [36, 56], slug: [80, 36], cart: [72, 64], goose: [80, 80] },
   items: { latte: [30, 36], geoduck: [50, 44], star: [40, 40], flannel: [40, 40], jacket: [38, 40], teriyaki: [44, 40], ticket: [48, 40], doubleshot: [66, 40], salmon: [42, 40], flower: [40, 40] },
-  blocks: { qblock: [48, 48], qblock_used: [48, 48], brick: [48, 48], brick_bit: [20, 20], checkpoint_off: [64, 96], checkpoint_on: [64, 96], bus: [200, 90], raindrop: [16, 16], puff: [24, 24] },
+  blocks: { qblock: [72, 72], qblock_used: [72, 72], brick: [48, 48], brick_bit: [20, 20], checkpoint_off: [76, 96], checkpoint_on: [76, 96], bus: [260, 110], raindrop: [12, 18], puff: [36, 28], sparkle: [96, 96] },
+  props: {
+    cedar: [180, 430], stump: [70, 64], fern: [90, 60], lantern: [36, 44], busstop: [60, 150], puddle: [96, 30],
+    freebox: [100, 96], compost: [60, 62], bin_blue: [50, 72], bin_green: [50, 72], bin_black: [50, 72], column: [14, 96], signboard: [320, 330],
+  },
   ui: { heart_full: [32, 32], heart_empty: [32, 32], geoduck_silhouette: [50, 44] },
 };
 
-const TINT: Record<string, string> = { jimothy: '#8E8A86', enemies: '#FF6F61', items: '#F2B35B', blocks: '#5E8C5A', ui: '#B8C9CE' };
+const TINT: Record<string, string> = { jimothy: '#8E8A86', enemies: '#FF6F61', items: '#F2B35B', blocks: '#5E8C5A', ui: '#B8C9CE', props: '#3f7a58' };
 
 export function ensurePlaceholders(scene: Phaser.Scene): void {
   for (const [atlas, frames] of Object.entries(REQUIRED)) {

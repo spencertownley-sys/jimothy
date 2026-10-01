@@ -10,6 +10,7 @@ import { heartsFor, resolveBlockItem, type PowerUpKind } from '../data/powerups'
 import { Brick } from '../entities/blocks/Brick';
 import { Checkpoint } from '../entities/blocks/Checkpoint';
 import { QuestionBlock, type BlockHost } from '../entities/blocks/QuestionBlock';
+import { spawnProp } from '../entities/blocks/Prop';
 import { Sign } from '../entities/blocks/Sign';
 import { Enemy, spawnEnemy, type EnemyContext } from '../entities/enemies';
 import { Geoduck } from '../entities/items/Geoduck';
@@ -41,6 +42,11 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
   player!: Player;
   get levelId(): string {
     return this.def.id;
+  }
+
+  /** dev/test hook: give Jimothy a power-up without fetching it */
+  devPower(kind: PowerUpKind): void {
+    this.player.applyPowerUp(kind);
   }
 
   /** dev/test hook: drop Jimothy somewhere else in the level */
@@ -163,10 +169,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     this.time.delayedCall(0, () => this.pushHud());
     AudioManager.music(this.player.flannelMs > 0 ? 'flannel' : this.level.music);
 
-    this.physics.world.on(Phaser.Physics.Arcade.Events.WORLD_STEP, this.stepHandler);
+    // Keep the world reference: by the time SHUTDOWN fires `this.physics.world` may already be
+    // gone, and a listener left behind would run every fixed step twice after a restart.
+    const world = this.physics.world;
+    world.on(Phaser.Physics.Arcade.Events.WORLD_STEP, this.stepHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      // the physics plugin shuts down (and drops its listeners) before this fires
-      this.physics.world?.off(Phaser.Physics.Arcade.Events.WORLD_STEP, this.stepHandler);
+      world.off(Phaser.Physics.Arcade.Events.WORLD_STEP, this.stepHandler);
       window.removeEventListener('keydown', this.onDebugKey);
       this.parallax.destroy();
     });
@@ -210,6 +218,9 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
           break;
         case 'exit':
           this.zones.push({ kind: 'exit', rect: new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), obj });
+          break;
+        case 'prop':
+          spawnProp(this, obj);
           break;
         case 'player_spawn':
           break;

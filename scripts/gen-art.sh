@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Cuts placeholder-quality sprites out of the Higgsfield concept sheets in art/concept,
-# draws the World 1 tileset and parallax layers, and leaves everything under art/sprites
-# and public/assets. Re-run after swapping a concept sheet; then `npm run pack:atlases`.
+# Builds every in-game image from Higgsfield output: character, enemy and item sprites are cut
+# from the concept sheets in art/concept; tiles, blocks, props and parallax layers come from
+# the generations in art/higgsfield. Nothing is hand-drawn. Re-run, then `npm run pack:atlases`.
 #
 # Needs ImageMagick (`convert`). Every cut is a flood-fill from the sheet's neutral grey
 # corners so the painterly rim light survives; crops are generous and trimmed afterwards.
@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 C=art/concept
 OUT=art/sprites
 rm -rf "$OUT"
-mkdir -p "$OUT"/{jimothy,enemies,items,blocks,ui}
+mkdir -p "$OUT"/{jimothy,enemies,items,blocks,ui,props}
 
 # cut <sheet> <geometry WxH+X+Y> <target-height> <out.png>
 cut() {
@@ -72,106 +72,132 @@ convert $OUT/items/latte.png \( $OUT/items/latte.png \) +append -resize x40 $OUT
 convert $OUT/ui/heart_full.png -colorspace Gray -alpha on -channel A -evaluate multiply 0.45 +channel $OUT/ui/heart_empty.png
 convert $OUT/items/geoduck.png -fill '#1C2426' -colorize 85% $OUT/ui/geoduck_silhouette.png
 
-# ---- Blocks (drawn, no concept art) -----------------------------------------------
-# Chalkboard "?" menu sign
-convert -size 48x48 xc:'#5a3c22' -fill '#233b31' -draw 'roundrectangle 4,4 43,43 4,4' \
-  -fill '#F4EFE6' -font DejaVu-Sans-Bold -pointsize 30 -gravity center -annotate +0+1 '?' \
-  -stroke '#8a6a40' -strokewidth 2 -fill none -draw 'roundrectangle 1,1 46,46 5,5' \
-  $OUT/blocks/qblock.png
-convert -size 48x48 xc:'#5a3c22' -fill '#1b2d26' -draw 'roundrectangle 4,4 43,43 4,4' \
-  -stroke '#8a6a40' -strokewidth 2 -fill none -draw 'roundrectangle 1,1 46,46 5,5' \
-  $OUT/blocks/qblock_used.png
-# Mossy cobblestone brick
-convert -size 48x48 xc:'#6f6a60' -fill '#7d786d' -draw 'roundrectangle 2,2 22,22 5,5' \
-  -draw 'roundrectangle 26,2 46,22 5,5' -draw 'roundrectangle 2,26 22,46 5,5' -draw 'roundrectangle 26,26 46,46 5,5' \
-  -fill '#5E8C5A' -draw 'circle 24,24 24,20' -draw 'circle 6,44 6,41' -draw 'circle 44,8 44,6' \
-  $OUT/blocks/brick.png
-# Brick fragment for the break puff
-convert -size 20x20 xc:none -fill '#7d786d' -draw 'roundrectangle 1,1 18,18 4,4' $OUT/blocks/brick_bit.png
-# Coffee stand checkpoint: inactive (grey cup) and active (amber cup + steam)
-convert -size 64x96 xc:none -fill '#5a3c22' -draw 'rectangle 6,40 58,92' -fill '#8a6a40' -draw 'rectangle 6,40 58,48' \
-  -fill '#233b31' -draw 'roundrectangle 12,50 52,84 3,3' -fill '#F4EFE6' -font DejaVu-Sans-Bold -pointsize 11 -gravity north -annotate +0+56 'COFFEE' \
-  -fill '#9a9a9a' -draw 'roundrectangle 22,14 42,38 3,3' -fill '#bdbdbd' -draw 'rectangle 20,12 44,18' \
-  $OUT/blocks/checkpoint_off.png
-convert -size 64x96 xc:none -fill '#5a3c22' -draw 'rectangle 6,40 58,92' -fill '#8a6a40' -draw 'rectangle 6,40 58,48' \
-  -fill '#233b31' -draw 'roundrectangle 12,50 52,84 3,3' -fill '#F4EFE6' -font DejaVu-Sans-Bold -pointsize 11 -gravity north -annotate +0+56 'COFFEE' \
-  -fill '#F2B35B' -draw 'roundrectangle 22,14 42,38 3,3' -fill '#F4EFE6' -draw 'rectangle 20,12 44,18' \
-  -fill '#ffffff80' -draw 'ellipse 32,6 4,5 0,360' \
-  $OUT/blocks/checkpoint_on.png
-# The 44 bus that picks Jimothy up at the exit
-convert -size 200x90 xc:none -fill '#2e6b5e' -draw 'roundrectangle 4,10 196,80 10,10' \
-  -fill '#B8C9CE' -draw 'rectangle 14,20 60,46' -draw 'rectangle 70,20 116,46' -draw 'rectangle 126,20 172,46' \
-  -fill '#F2B35B' -draw 'rectangle 150,2 196,12' -fill '#1C2426' -font DejaVu-Sans-Bold -pointsize 10 -gravity northeast -annotate +8+1 '44 BALLARD' \
-  -fill '#1C2426' -draw 'circle 40,82 40,70' -draw 'circle 160,82 160,70' \
-  $OUT/blocks/bus.png
-# Rain drop projectile (for the Rain Jacket)
-convert -size 16x16 xc:none -fill '#8FB7C7' -draw 'circle 8,8 8,2' -fill '#ffffff' -draw 'circle 6,6 6,4' $OUT/blocks/raindrop.png
-# Puff for stomps / brick breaks
-convert -size 24x24 xc:none -fill '#ffffffb0' -draw 'circle 12,12 12,3' $OUT/blocks/puff.png
+# ---- Higgsfield helpers ---------------------------------------------------------------
+HF=art/higgsfield
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
 
-# ---- World 1 tileset (48 px, extruded 1 px, margin 1 / spacing 2) -------------------
-T=/tmp/jimothy-tiles; rm -rf $T; mkdir -p $T
-tile() { # tile <index> <draw commands...>
-  local i="$1"; shift
-  convert -size 48x48 "$@" $T/$(printf '%02d' $i).png
+# cutfill <src> <geometry> <out> <resize-args...>: crop, flood-fill the grey ground from the
+# corners (keeps glows and rim light), trim, resize.
+cutfill() {
+  local src="$1" geo="$2" out="$3"; shift 3
+  local w=${geo%%x*} hh=${geo#*x}; hh=${hh%%+*}
+  convert "$src" -crop "$geo" +repage -alpha set -fuzz 8% -fill none \
+    -draw "matte 2,2 floodfill" -draw "matte $((w-3)),2 floodfill" \
+    -draw "matte 2,$((hh-3)) floodfill" -draw "matte $((w-3)),$((hh-3)) floodfill" \
+    -trim +repage "$@" "$out"
 }
-tile 1  xc:'#6d7f82' -fill '#8a9c9e' -draw 'rectangle 0,0 47,6' -fill '#5E8C5A' -draw 'rectangle 0,0 47,3' -fill '#5c6d70' -draw 'line 24,8 24,47' -draw 'line 0,30 47,30'   # sidewalk top
-tile 2  xc:'#3b3128' -fill '#463a2f' -draw 'rectangle 6,10 20,20' -draw 'rectangle 28,30 44,40'                                                   # dirt fill
-tile 3  xc:'#3b3128' -fill '#5E8C5A' -draw 'rectangle 0,0 47,10' -fill '#6fa36a' -draw 'rectangle 0,0 47,4' -fill '#4e7a4a' -draw 'line 10,10 10,14' -draw 'line 30,10 30,16'  # grass top
-tile 4  xc:'#6f6a60' -fill '#7d786d' -draw 'roundrectangle 2,2 22,22 5,5' -draw 'roundrectangle 26,2 46,22 5,5' -draw 'roundrectangle 2,26 22,46 5,5' -draw 'roundrectangle 26,26 46,46 5,5' -fill '#5E8C5A' -draw 'circle 24,24 24,21'  # cobble wall
-tile 5  xc:none -fill '#a7793f' -draw 'rectangle 0,4 47,12' -draw 'rectangle 0,18 47,26' -draw 'rectangle 0,32 47,40' -fill '#7a5527' -draw 'rectangle 4,4 8,44' -draw 'rectangle 40,4 44,44'  # pallet (one-way)
-tile 6  xc:none -fill '#2f6fb5' -draw 'roundrectangle 0,14 47,47 6,6' -fill '#4a8ad6' -draw 'rectangle 0,14 47,22'  # blue bin lid
-tile 7  xc:none -fill '#3f8c48' -draw 'roundrectangle 0,14 47,47 6,6' -fill '#5ba864' -draw 'rectangle 0,14 47,22'  # green bin lid
-tile 8  xc:none -fill '#2b2b2b' -draw 'roundrectangle 0,14 47,47 6,6' -fill '#474747' -draw 'rectangle 0,14 47,22'  # black bin lid
-tile 9  xc:'#2f6fb5' -fill '#255c99' -draw 'rectangle 6,0 10,47' -draw 'rectangle 36,0 40,47' -fill '#B8C9CE' -draw 'circle 24,24 24,18'  # blue bin body
-tile 10 xc:'#3f8c48' -fill '#33733b' -draw 'rectangle 6,0 10,47' -draw 'rectangle 36,0 40,47' -fill '#B8C9CE' -draw 'circle 24,24 24,18'  # green bin body
-tile 11 xc:'#2b2b2b' -fill '#1e1e1e' -draw 'rectangle 6,0 10,47' -draw 'rectangle 36,0 40,47' -fill '#B8C9CE' -draw 'circle 24,24 24,18'  # black bin body
-tile 12 xc:'#2a3a3a' -fill '#394f4f' -draw 'rectangle 0,0 47,6' -draw 'rectangle 0,16 47,22' -draw 'rectangle 0,32 47,38' -fill '#5E8C5A' -draw 'circle 10,12 10,9'  # porch roof (solid)
-tile 13 xc:none -fill '#e8e2d6' -draw 'rectangle 18,0 30,47' -fill '#cfc7b8' -draw 'rectangle 26,0 30,47'  # porch post (decor)
-tile 14 xc:none -fill '#5a3c22' -draw 'rectangle 12,0 36,47' -fill '#6f4a2a' -draw 'rectangle 16,0 22,47' -fill '#5E8C5A' -draw 'circle 32,30 32,27'  # cedar trunk (decor)
-tile 15 xc:none -fill '#2f5e45' -draw 'polygon 24,0 47,47 0,47' -fill '#3f7a58' -draw 'polygon 24,8 40,40 8,40'  # cedar foliage (decor)
-tile 16 xc:none -fill '#2b3c44' -draw 'ellipse 24,30 23,14 0,360' -fill '#8FB7C7' -draw 'ellipse 24,30 23,14 0,360' -fill '#2b3c44' -draw 'ellipse 24,30 20,11 0,360' -fill '#4b6a78' -draw 'ellipse 18,27 6,3 0,360'  # pothole (hazard)
-tile 17 xc:none -fill '#6f4a2a' -draw 'rectangle 8,16 40,47' -fill '#c9a070' -draw 'ellipse 24,16 16,6 0,360' -fill '#a67c4e' -draw 'ellipse 24,16 10,3 0,360'  # stump (decor)
-tile 18 xc:'#4d4a43' -fill '#57544c' -draw 'rectangle 2,2 22,22' -draw 'rectangle 26,26 46,46'  # stone fill (solid)
-tile 19 xc:none -fill '#6b4a2d' -draw 'roundrectangle 0,14 47,47 6,6' -fill '#8a6a40' -draw 'rectangle 0,14 47,22'  # compost bin lid (one-way)
-tile 20 xc:'#6b4a2d' -fill '#553a22' -draw 'rectangle 6,0 10,47' -draw 'rectangle 36,0 40,47' -fill '#5E8C5A' -draw 'circle 24,24 24,18'  # compost body (solid)
-tile 21 xc:none -fill '#8a9c9e' -draw 'rectangle 22,8 26,47' -fill '#2e6b5e' -draw 'roundrectangle 8,0 40,18 3,3' -fill '#F4EFE6' -font DejaVu-Sans-Bold -pointsize 10 -gravity north -annotate +0+3 '44'  # bus stop sign (decor)
-tile 22 xc:none -fill '#d9d2c3' -draw 'roundrectangle 6,10 42,42 4,4' -fill '#1C2426' -draw 'rectangle 11,15 37,35' -fill '#4a8ad6' -draw 'rectangle 13,17 35,33'  # CRT monitor (decor)
-tile 23 xc:none -fill '#b08a5a' -draw 'rectangle 2,20 46,47' -fill '#F4EFE6' -font DejaVu-Sans-Bold -pointsize 12 -gravity center -annotate +0+8 'FREE'  # free box (decor)
-tile 24 xc:none -fill '#4d4a43' -draw 'roundrectangle 0,8 47,47 4,4' -fill '#1C2426' -draw 'rectangle 6,16 41,20' -draw 'rectangle 6,26 41,30' -draw 'rectangle 6,36 41,40'  # storm drain grate (solid)
-tile 25 xc:none -fill '#8FB7C7' -draw 'ellipse 24,40 22,6 0,360' -fill '#b8d4de' -draw 'ellipse 20,39 10,2 0,360'  # puddle (decor)
-tile 26 xc:none -fill '#5E8C5A' -draw 'polygon 24,47 8,20 14,18 24,40 34,18 40,20' -draw 'polygon 24,47 2,32 6,30 24,42 42,30 46,32'  # fern (decor)
-tile 27 xc:none -fill '#e8e2d6' -draw 'rectangle 4,0 8,47' -draw 'rectangle 22,0 26,47' -draw 'rectangle 40,0 44,47' -draw 'rectangle 0,10 47,14' -draw 'rectangle 0,30 47,34'  # fence (decor)
-tile 28 xc:none -fill '#F2B35B' -draw 'circle 24,20 24,12' -fill '#ffd98a' -draw 'circle 24,20 24,7'  # porch light (decor)
-tile 29 xc:none -fill '#5a3c22' -draw 'roundrectangle 0,18 47,30 6,6' -fill '#3f7a58' -draw 'ellipse 12,16 10,6 0,360' -draw 'ellipse 36,16 10,6 0,360'  # cedar branch (one-way)
-tile 30 xc:none -fill '#3f7a58' -draw 'ellipse 24,30 24,16 0,360' -fill '#2f5e45' -draw 'ellipse 24,34 18,10 0,360'  # cedar bough (decor)
-# extrude each tile by 1 px (edge pixels duplicated), then lay out 8 per row with 2 px spacing / 1 px margin
-for f in $T/*.png; do
+# keyout <src> <out> <fuzz>: remove every pixel near the sheet's background colour (for
+# objects with enclosed gaps, like fence pickets).
+keyout() {
+  local bg; bg=$(convert "$1" -format '%[pixel:p{5,5}]' info:)
+  convert "$1" -alpha set -fuzz "$3" -transparent "$bg" "$2"
+}
+# mirror <in> <out>: append a flopped copy so the strip wraps seamlessly left-right.
+mirror() { convert "$1" \( +clone -flop \) +append +repage "$2"; }
+
+# ---- Blocks -------------------------------------------------------------------------
+# Chalkboard "?" block: keep the golden glow around the frame. The 2048 px sheet is scaled so
+# the wooden frame is ~48 px; the glow spills past it (the body is still 48x48).
+convert $HF/05_qblock.jpg -resize 72x72 -alpha set -fuzz 6% -fill none \
+  -draw "matte 1,1 floodfill" -draw "matte 70,1 floodfill" -draw "matte 1,70 floodfill" -draw "matte 70,70 floodfill" \
+  $OUT/blocks/qblock.png
+convert $HF/06_qblock_used.jpg -resize 72x72 -alpha set -fuzz 6% -fill none \
+  -draw "matte 1,1 floodfill" -draw "matte 70,1 floodfill" -draw "matte 1,70 floodfill" -draw "matte 70,70 floodfill" \
+  $OUT/blocks/qblock_used.png
+cutfill $HF/07_brick.jpg 1300x1340+376+352 $OUT/blocks/brick.png -resize '48x48!'
+cutfill $HF/17_fx.jpg 360x290+1040+430 $OUT/blocks/brick_bit.png -resize x20
+cutfill $HF/17_fx.jpg 260x330+156+400 $OUT/blocks/raindrop.png -resize x18
+cutfill $HF/17_fx.jpg 470x330+500+375 $OUT/blocks/puff.png -resize x28
+cutfill $HF/17_fx.jpg 450x450+1493+345 $OUT/blocks/sparkle.png -resize 96x96
+# Coffee stand checkpoint: full colour when lit, dim and desaturated before you touch it.
+cutfill $HF/08_coffee_stand.jpg 1240x1560+414+120 $OUT/blocks/checkpoint_on.png -resize x96
+convert $OUT/blocks/checkpoint_on.png -modulate 62,25 $OUT/blocks/checkpoint_off.png
+cutfill $HF/09_bus.jpg 1640x660+186+130 $OUT/blocks/bus.png -resize x110
+
+# ---- Props (decor sprites placed by `prop` objects in the map) ------------------------
+cutfill $HF/00_cedar.jpg 1080x1960+140+60 $OUT/props/cedar.png -resize x430
+P=$HF/10_props_a.jpg
+cutfill $P 640x420+40+100   $OUT/props/stump.png    -resize x64
+cutfill $P 660x500+710+60   $OUT/props/fern.png     -resize x60
+cutfill $P 380x470+1530+55  $OUT/props/lantern.png  -resize x44
+cutfill $P 330x560+180+555  $OUT/props/busstop.png  -resize x150
+cutfill $P 780x320+590+700  $OUT/props/puddle.png   -resize 96x
+B=$HF/11_props_b.jpg
+cutfill $B 720x700+50+255   $OUT/props/freebox.png  -resize x96
+cutfill $B 380x400+747+480  $OUT/props/compost.png  -resize x62
+cutfill $B 275x380+1140+486 $OUT/props/bin_blue.png  -resize x72
+cutfill $B 275x380+1425+486 $OUT/props/bin_green.png -resize x72
+cutfill $B 270x380+1712+486 $OUT/props/bin_black.png -resize x72
+convert $HF/12_porch.jpg -crop 96x380+699+328 +repage -resize '14x96!' $OUT/props/column.png
+cutfill $HF/13_signboard.jpg 1280x1290+370+150 $OUT/props/signboard.png -resize 320x
+
+# ---- World 1 tileset (48 px tiles, 1 px extrusion, margin 2 / spacing 4) ---------------
+T=$TMP/tiles; mkdir -p $T
+put() { cp "$1" $T/$(printf '%02d' "$2").png; }
+crop48() { convert "$1" -crop "48x48+$2+$3" +repage "$4"; }
+# Sidewalk ground (ids 1-4 top, 5-8 soil underneath): a 2-tile-tall strip, mirrored to wrap.
+convert $HF/02_ground_sidewalk.jpg -resize x96 -crop 96x96+40+0 +repage $TMP/side96.png
+mirror $TMP/side96.png $TMP/side.png
+for i in 0 1 2 3; do crop48 $TMP/side.png $((i*48)) 0 $T/top.png; put $T/top.png $((1+i)); crop48 $TMP/side.png $((i*48)) 48 $T/soil.png; put $T/soil.png $((5+i)); done
+# Grass ground (ids 9-12 top, 13-16 soil). The grey sky above the blades is keyed out.
+keyout $HF/03_ground_grass.jpg $TMP/grass_k.png 7%
+convert $TMP/grass_k.png -resize x96 -crop 96x96+40+0 +repage $TMP/grass96.png
+mirror $TMP/grass96.png $TMP/grass.png
+for i in 0 1 2 3; do crop48 $TMP/grass.png $((i*48)) 0 $T/top.png; put $T/top.png $((9+i)); crop48 $TMP/grass.png $((i*48)) 48 $T/soil.png; put $T/soil.png $((13+i)); done
+# Mossy cobblestone (ids 17-20): the four quadrants of one 96 px patch, slightly darkened so
+# walls sit back from the gameplay layer. Tiles repeat as a 2x2 block (no mirroring).
+convert $HF/04_cobble_texture.jpg -resize 176x176 -crop 96x96+40+40 +repage -modulate 78,80 $TMP/cob.png
+crop48 $TMP/cob.png 0 0 $T/a.png;   put $T/a.png 17
+crop48 $TMP/cob.png 48 0 $T/b.png;  put $T/b.png 18
+crop48 $TMP/cob.png 0 48 $T/c2.png; put $T/c2.png 19
+crop48 $TMP/cob.png 48 48 $T/d.png; put $T/d.png 20
+# Wooden picket fence: ids 21-22 the top half (one-way platforms), 23-24 the lower half
+# (fence body under stepped platforms). Keyed out globally so the gaps between pickets clear.
+convert $HF/01_fence.jpg -crop 2048x423+0+238 +repage $TMP/fence_c.png
+keyout $TMP/fence_c.png $TMP/fence_k.png 9%
+convert $TMP/fence_k.png -resize x96 -crop 48x96+60+0 +repage $TMP/fence48.png
+mirror $TMP/fence48.png $TMP/fence.png
+crop48 $TMP/fence.png 0 0 $T/f.png;   put $T/f.png 21
+crop48 $TMP/fence.png 48 0 $T/f.png;  put $T/f.png 22
+crop48 $TMP/fence.png 0 48 $T/f.png;  put $T/f.png 23
+crop48 $TMP/fence.png 48 48 $T/f.png; put $T/f.png 24
+# Craftsman porch roof shingles (ids 25-26 upper row, 27-28 eave row), solid.
+convert $HF/12_porch.jpg -crop 1000x200+500+125 +repage -resize 'x96!' -crop 48x96+80+0 +repage $TMP/roof48.png
+mirror $TMP/roof48.png $TMP/roof.png
+crop48 $TMP/roof.png 0 0 $T/r.png;   put $T/r.png 25
+crop48 $TMP/roof.png 48 0 $T/r.png;  put $T/r.png 26
+crop48 $TMP/roof.png 0 48 $T/r.png;  put $T/r.png 27
+crop48 $TMP/roof.png 48 48 $T/r.png; put $T/r.png 28
+# Storm drain grate (ids 29-30), solid.
+cutfill $HF/10_props_a.jpg 640x330+1362+690 $TMP/drain.png -resize '96x48!'
+crop48 $TMP/drain.png 0 0 $T/d.png;  put $T/d.png 29
+crop48 $TMP/drain.png 48 0 $T/d.png; put $T/d.png 30
+# Pothole puddle (id 31, hazard): from the enemy sheet, sat on the bottom edge of its tile.
+cutfill $C/07_enemy_sheet.jpg 680x220+690+850 $TMP/pot.png -resize 48x
+convert -size 48x48 xc:none $TMP/pot.png -gravity south -composite $T/p.png; put $T/p.png 31
+convert -size 48x48 xc:none $T/32.png
+for f in $T/[0-9][0-9].png; do
   convert "$f" -set option:distort:viewport 50x50-1-1 -virtual-pixel edge -distort SRT 0 +repage "$f"
 done
-montage $T/*.png -tile 8x -geometry 50x50+1+1 -background none -depth 8 public/assets/tilesets/ballard.png
-# montage adds 1 px border around each cell → 2 px between tiles, 1 px margin. Verify size: 8*52 = 416 wide.
+montage $T/[0-9][0-9].png -tile 8x -geometry 50x50+1+1 -background none -depth 8 public/assets/tilesets/ballard.png
 identify public/assets/tilesets/ballard.png
 
 # ---- Backgrounds -------------------------------------------------------------------
-B=public/assets/backgrounds
-# far: the Ballard concept painting, mirrored so it tiles seamlessly; softened and sat on the
-# ground line (y=624) so painted bins/signs never read as platforms. Sky color fills the rest.
-convert $C/03_bg_world1_ballard.jpg -resize x600 \( +clone -flop \) +append -blur 0x1.2 -modulate 92,78 \
-  -gravity south -background '#6E9AA6' -splice 0x96 +repage -quality 82 $B/bg_ballard_far.jpg
-# mid: faint craftsman-house and cedar silhouettes (mist layer)
-convert -size 1280x720 xc:none -fill '#1F3A3326' \
-  -draw 'polygon 60,720 60,430 160,340 260,430 260,720' -draw 'polygon 420,720 420,470 520,390 620,470 620,720' \
-  -draw 'polygon 860,720 860,440 980,350 1100,440 1100,720' \
-  -fill '#1F3A332e' -draw 'polygon 340,720 340,260 370,120 400,260 400,720' -draw 'polygon 720,720 720,220 760,60 800,220 800,720' \
-  -draw 'polygon 1180,720 1180,280 1210,150 1240,280 1240,720' \
-  $B/bg_ballard_mid.png
-# near: fence line + ferns, alpha, sits behind the ground tiles
-convert -size 1280x400 xc:none -fill '#1F3A33aa' -draw 'rectangle 0,330 1280,336' -draw 'rectangle 0,360 1280,366' \
-  -fill '#1F3A33cc' -draw 'rectangle 40,300 48,400' -draw 'rectangle 240,300 248,400' -draw 'rectangle 440,300 448,400' -draw 'rectangle 640,300 648,400' -draw 'rectangle 840,300 848,400' -draw 'rectangle 1040,300 1048,400' \
-  -fill '#2f5e45cc' -draw 'polygon 120,400 90,330 100,326 120,380 140,326 150,330' -draw 'polygon 560,400 530,320 540,316 560,380 580,316 590,320' -draw 'polygon 980,400 950,330 960,326 980,380 1000,326 1010,330' \
-  $B/bg_ballard_near.png
-# title key art + world map backdrop
-convert $C/23_title_key_art_v3.jpg -resize 1280x720^ -gravity center -extent 1280x720 -quality 85 $B/title_keyart.jpg
-convert $C/03_bg_world1_ballard.jpg -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x6 -modulate 70,80 -quality 80 $B/worldmap.jpg
+BG=public/assets/backgrounds
+# far: sky, Olympics and distant cedars, mirrored so it wraps.
+convert $HF/14_bg_far.jpg -resize x720 $TMP/far.png
+mirror $TMP/far.png $TMP/far2.png
+convert $TMP/far2.png -quality 84 $BG/bg_ballard_far.jpg
+# mid: craftsman houses with their grey ground keyed out.
+convert $HF/15_bg_mid.jpg -crop 2048x740+0+20 +repage -alpha set -fuzz 7% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -resize x430 $TMP/mid.png
+mirror $TMP/mid.png $BG/bg_ballard_mid.png
+# near: ferns along the bottom edge.
+convert $HF/16_bg_near.jpg -alpha set -fuzz 8% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -resize x260 -modulate 62,70 $TMP/near.png
+mirror $TMP/near.png $BG/bg_ballard_near.png
+# title key art + world map backdrop (both from the concept set)
+convert $C/23_title_key_art_v3.jpg -resize 1280x720^ -gravity center -extent 1280x720 -quality 85 $BG/title_keyart.jpg
+convert $C/03_bg_world1_ballard.jpg -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x6 -modulate 70,80 -quality 80 $BG/worldmap.jpg
 echo "art generated"
