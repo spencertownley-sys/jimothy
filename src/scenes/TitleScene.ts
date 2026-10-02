@@ -50,7 +50,6 @@ export class TitleScene extends Phaser.Scene {
       fontSize: 15, color: COLORS.mist, display: false,
     }).setOrigin(0.5);
     this.input.on('pointerdown', () => (this.tapped = true));
-    if (wantsTouchControls() && !this.scene.isActive('Touch')) this.scene.launch('Touch');
   }
 
   override update(): void {

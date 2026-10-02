@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AudioManager } from '../../core/audio/AudioManager';
 import { getProp, type TiledObjectLike } from '../../core/tiled';
 import { ENEMIES } from '../../data/entities';
 import { Enemy, type EnemyContext } from './Enemy';
@@ -8,6 +9,7 @@ export class Seagull extends Enemy {
   private swoop: boolean;
   private baseY: number;
   private t = 0;
+  private squawked = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, obj?: TiledObjectLike) {
     super(scene, x, y, ENEMIES.seagull, obj);
@@ -17,6 +19,11 @@ export class Seagull extends Enemy {
   }
 
   protected override behave(ctx: EnemyContext): void {
+    // one squawk when it first comes into view, so you hear it coming
+    if (!this.squawked && Math.abs(this.x - ctx.player.x) < 560) {
+      this.squawked = true;
+      AudioManager.sfx('squawk');
+    }
     if (!this.swoop) {
       this.walk(ctx);
       return;

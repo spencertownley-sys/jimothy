@@ -7,6 +7,7 @@ export interface SaveOptions {
   showTimer: boolean;
   drizzle: boolean;
   reduceMotion: boolean;
+  haptics: boolean;
 }
 
 export interface SaveV1 {
@@ -38,6 +39,7 @@ export function freshSave(): SaveV1 {
       showTimer: false,
       drizzle: true,
       reduceMotion: false,
+      haptics: true,
     },
   };
 }
@@ -82,6 +84,7 @@ export function migrate(raw: unknown): SaveV1 {
       showTimer: opts.showTimer === true,
       drizzle: opts.drizzle !== false,
       reduceMotion: opts.reduceMotion === true,
+      haptics: opts.haptics !== false,
     },
   };
 }

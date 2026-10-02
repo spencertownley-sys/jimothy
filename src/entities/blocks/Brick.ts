@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AudioManager } from '../../core/audio/AudioManager';
+import { Haptics } from '../../core/haptics';
 import type { Player } from '../Player';
 import type { BlockHost } from './QuestionBlock';
 
@@ -16,10 +17,12 @@ export class Brick extends Phaser.Physics.Arcade.Sprite {
 
   bump(player: Player, host: BlockHost): void {
     if (player.power === 'small') {
+      Haptics.pulse('bump');
       AudioManager.sfx('bump');
       this.scene.tweens.add({ targets: this, y: this.y - 10, duration: 80, yoyo: true, ease: 'Quad.out' });
       return;
     }
+    Haptics.pulse('brick');
     AudioManager.sfx('brick');
     host.spawnBrickBits(this.x, this.y);
     this.destroy();

@@ -73,11 +73,50 @@ const TRACKS: Record<string, Track> = {
 const A3 = 220;
 const noteHz = (semi: number): number => A3 * Math.pow(2, semi / 12);
 
+// Recorded audio (Epidemic Sound, see CREDITS.md). Anything missing or not yet decoded falls
+// back to the synth recipes above, so a slow network never means a silent game.
+const SAMPLE_SFX: Record<string, { file: string; gain: number }> = {
+  jump: { file: 'sfx_jump', gain: 0.45 },
+  latte: { file: 'sfx_latte', gain: 0.5 },
+  stomp: { file: 'sfx_stomp', gain: 0.8 },
+  grow: { file: 'sfx_grow', gain: 0.75 },
+  hurt: { file: 'sfx_hurt', gain: 0.8 },
+  bump: { file: 'sfx_bump', gain: 0.8 },
+  brick: { file: 'sfx_brick', gain: 0.75 },
+  die: { file: 'sfx_die', gain: 0.75 },
+  clear: { file: 'sfx_clear', gain: 0.8 },
+  squawk: { file: 'sfx_squawk', gain: 0.5 },
+  drain: { file: 'sfx_drain', gain: 0.8 },
+  oneup: { file: 'sfx_oneup', gain: 0.75 },
+  geoduck: { file: 'sfx_geoduck', gain: 0.8 },
+  checkpoint: { file: 'sfx_checkpoint', gain: 0.6 },
+  boing: { file: 'sfx_boing', gain: 0.6 },
+  menu_select: { file: 'sfx_menu_select', gain: 0.55 },
+  menu_move: { file: 'sfx_menu_move', gain: 0.45 },
+};
+
+interface MusicFile {
+  file: string;
+  gain: number;
+  /** muffled variant (storm drain: the Ballard track heard through the street) */
+  lowpass?: number;
+  rate?: number;
+}
+const MUSIC_FILES: Record<string, MusicFile> = {
+  title: { file: 'title', gain: 0.5 }, // "Pearl City Beach" – Paper Twins
+  ballard: { file: 'ballard', gain: 0.42 }, // "Feel So Right" – Dag Anderson
+  flannel: { file: 'flannel', gain: 0.4 }, // "Wild in Seattle" – Rockin' For Decades
+  drain: { file: 'ballard', gain: 0.38, lowpass: 650, rate: 0.94 },
+};
+
+type LoadState = 'loading' | 'ready' | 'failed';
+
 interface MusicHandle {
   key: string;
   gain: GainNode;
   timer: number;
   stopped: boolean;
+  source?: AudioBufferSourceNode;
 }
 
 class AudioManagerImpl {
@@ -91,6 +130,11 @@ class AudioManagerImpl {
   private paused = false;
   private unlocked = false;
   private warnedMissing = new Set<string>();
+  private base = 'assets/audio/';
+  private raw = new Map<string, ArrayBuffer>();
+  private buffers = new Map<string, AudioBuffer>();
+  private loadState = new Map<string, LoadState>();
+  private wantedMusic: string | null = null;
 
   constructor() {
     if (typeof document !== 'undefined') {
@@ -99,6 +143,56 @@ class AudioManagerImpl {
         this.applyMasterGain();
       });
     }
+  }
+
+  /**
+   * Fetch every audio file up front (no AudioContext needed). Decoding waits for unlock(),
+   * because Web Audio may only start after a user gesture.
+   */
+  preload(base = 'assets/audio/'): void {
+    this.base = base;
+    const files = new Set([...Object.values(SAMPLE_SFX).map((s) => s.file), ...Object.values(MUSIC_FILES).map((m) => m.file)]);
+    for (const file of files) {
+      if (this.loadState.has(file)) continue;
+      this.loadState.set(file, 'loading');
+      fetch(`${this.base}${file}.mp3`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((buf) => {
+          this.raw.set(file, buf);
+          this.decode(file);
+        })
+        .catch((err: unknown) => {
+          this.loadState.set(file, 'failed');
+          console.warn(`[audio] could not load ${file}.mp3 — using the synth fallback`, err);
+          this.onFileSettled(file);
+        });
+    }
+  }
+
+  private decode(file: string): void {
+    const ctx = this.ctx;
+    const buf = this.raw.get(file);
+    if (!ctx || !buf || this.buffers.has(file)) return;
+    this.raw.delete(file);
+    ctx
+      .decodeAudioData(buf)
+      .then((decoded) => {
+        this.buffers.set(file, decoded);
+        this.loadState.set(file, 'ready');
+        this.onFileSettled(file);
+      })
+      .catch((err: unknown) => {
+        this.loadState.set(file, 'failed');
+        console.warn(`[audio] could not decode ${file}.mp3`, err);
+        this.onFileSettled(file);
+      });
+  }
+
+  /** A file finished loading (or failed): start the music that was waiting on it. */
+  private onFileSettled(file: string): void {
+    const want = this.wantedMusic;
+    if (!want || this.current?.key === want) return;
+    if (MUSIC_FILES[want]?.file === file) this.startMusic(want);
   }
 
   /** Must be called from a user gesture (any first input) — Web Audio starts suspended. */
@@ -121,9 +215,21 @@ class AudioManagerImpl {
       this.applyVolumes();
       this.applyMasterGain();
       if (this.ctx.state === 'suspended') void this.ctx.resume();
+      for (const file of [...this.raw.keys()]) this.decode(file);
+      if (this.wantedMusic) this.startMusic(this.wantedMusic);
     } catch (err) {
       console.warn('[audio] unavailable', err);
     }
+  }
+
+  /** test hook: load state of each audio file */
+  status(): Record<string, string> {
+    return Object.fromEntries(this.loadState);
+  }
+
+  /** test hook: which music key is actually playing */
+  get playing(): string | null {
+    return this.current?.key ?? null;
   }
 
   get isUnlocked(): boolean {
@@ -154,6 +260,18 @@ class AudioManagerImpl {
 
   sfx(name: string): void {
     if (!this.ctx || !this.sfxBus) return;
+    const sample = SAMPLE_SFX[name];
+    const buffer = sample ? this.buffers.get(sample.file) : undefined;
+    if (sample && buffer) {
+      const src = this.ctx.createBufferSource();
+      const g = this.ctx.createGain();
+      src.buffer = buffer;
+      g.gain.value = sample.gain;
+      src.connect(g);
+      g.connect(this.sfxBus);
+      src.start();
+      return;
+    }
     const recipe = SFX[name];
     if (!recipe) {
       if (!this.warnedMissing.has(name)) {
@@ -182,11 +300,44 @@ class AudioManagerImpl {
 
   /** Crossfades to a procedural loop. Same key = no-op. */
   music(key: string | null): void {
+    this.wantedMusic = key;
     if (this.current?.key === key) return;
+    this.startMusic(key);
+  }
+
+  private startMusic(key: string | null): void {
+    if (this.current?.key === key && this.current) return;
+    const ctx = this.ctx;
+    const file = key ? MUSIC_FILES[key] : undefined;
+    // Recorded track still on its way: stay quiet (and keep the old track playing) until it lands.
+    if (ctx && file && this.loadState.get(file.file) === 'loading') return;
     const prev = this.current;
     this.current = null;
     if (prev) this.fadeOut(prev);
-    if (!key || !this.ctx || !this.musicBus) return;
+    if (!key || !ctx || !this.musicBus) return;
+    const buffer = file ? this.buffers.get(file.file) : undefined;
+    if (file && buffer) {
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(file.gain, ctx.currentTime + CONFIG.MUSIC_CROSSFADE_MS / 1000);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      if (file.rate) src.playbackRate.value = file.rate;
+      if (file.lowpass) {
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = file.lowpass;
+        src.connect(lp);
+        lp.connect(gain);
+      } else {
+        src.connect(gain);
+      }
+      gain.connect(this.musicBus);
+      src.start();
+      this.current = { key, gain, timer: 0, stopped: false, source: src };
+      return;
+    }
     const track = TRACKS[key];
     if (!track) {
       if (!this.warnedMissing.has(`music:${key}`)) {
@@ -195,9 +346,9 @@ class AudioManagerImpl {
       }
       return;
     }
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(1, this.ctx.currentTime + CONFIG.MUSIC_CROSSFADE_MS / 1000);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + CONFIG.MUSIC_CROSSFADE_MS / 1000);
     gain.connect(this.musicBus);
     const handle: MusicHandle = { key, gain, timer: 0, stopped: false };
     this.current = handle;
@@ -216,7 +367,14 @@ class AudioManagerImpl {
     h.gain.gain.cancelScheduledValues(t);
     h.gain.gain.setValueAtTime(h.gain.gain.value, t);
     h.gain.gain.linearRampToValueAtTime(0.0001, t + CONFIG.MUSIC_CROSSFADE_MS / 1000);
-    window.setTimeout(() => h.gain.disconnect(), CONFIG.MUSIC_CROSSFADE_MS + 100);
+    window.setTimeout(() => {
+      try {
+        h.source?.stop();
+      } catch {
+        /* already stopped */
+      }
+      h.gain.disconnect();
+    }, CONFIG.MUSIC_CROSSFADE_MS + 100);
   }
 
   private schedule(h: MusicHandle, track: Track): void {

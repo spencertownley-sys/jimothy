@@ -59,7 +59,7 @@ describe('InputState', () => {
     expect(pad.read().a).toBe(false);
   });
 
-  it('reset clears held state so nothing sticks across scenes', () => {
+  it('reset swallows a key still held from the previous scene', () => {
     const src = new FakeSource();
     const input = new InputState([src]);
     src.snap.start = true;
@@ -67,7 +67,12 @@ describe('InputState', () => {
     input.reset();
     expect(input.get('start')).toBe(false);
     input.update();
-    expect(input.justPressed('start')).toBe(true); // still held → counts as a fresh press after reset
+    expect(input.justPressed('start')).toBe(false); // the same press must not fire again
+    src.snap.start = false;
+    input.update();
+    src.snap.start = true;
+    input.update();
+    expect(input.justPressed('start')).toBe(true); // a new press works
   });
 });
 

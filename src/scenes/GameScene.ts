@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG, type PowerState } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
 import { bus, EV, type HudState } from '../core/events';
+import { Haptics } from '../core/haptics';
 import { getInput } from '../core/input';
 import { newRun, RUN_KEY, type RunState } from '../core/run';
 import { Save } from '../core/save/Save';
@@ -22,7 +23,6 @@ import { levelById, nextLevelId, type LevelDef } from '../levels/LevelDef';
 import { loadLevel, type LoadedLevel } from '../levels/LevelLoader';
 import { Parallax } from '../levels/Parallax';
 import { COLORS, uiText } from '../ui/text';
-import { wantsTouchControls } from '../ui/TouchControls';
 
 export interface GameSceneData {
   levelId: string;
@@ -163,9 +163,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     window.addEventListener('keydown', this.onDebugKey);
 
     if (!this.scene.isActive('HUD')) this.scene.launch('HUD');
-    if (wantsTouchControls() && !this.scene.isActive('Touch')) this.scene.launch('Touch');
     this.scene.bringToTop('HUD');
-    if (this.scene.isActive('Touch')) this.scene.bringToTop('Touch');
     this.time.delayedCall(0, () => this.pushHud());
     AudioManager.music(this.player.flannelMs > 0 ? 'flannel' : this.level.music);
 
@@ -388,6 +386,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     this.run.geoducksFound[index] = true;
     Save.recordGeoduck(this.def.parent ?? this.def.id, index);
     AudioManager.sfx('geoduck');
+    Haptics.pulse('geoduck');
     this.burst(this.player.x, this.player.y - 40, 0xff6f61);
     this.pushHud();
   }
@@ -453,6 +452,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
   onExtraLife(): void {
     this.run.lives += 1;
     AudioManager.sfx('oneup');
+    Haptics.pulse('oneup');
     this.toast('Jimothy!');
     this.pushHud();
   }
@@ -492,6 +492,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     this.player.victory();
     AudioManager.stopMusic();
     AudioManager.sfx('clear');
+    Haptics.pulse('clear');
     const groundY = this.player.y;
     const cam = this.cameras.main;
     const busSprite = this.add.image(cam.scrollX + CONFIG.WIDTH + 160, groundY, 'blocks', vehicle === 'bus' ? 'bus' : 'bus').setOrigin(0.5, 1).setDepth(9);

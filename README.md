@@ -4,7 +4,8 @@ A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. 
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
 **Status:** World 1-1 "Welcome to Ballard" is playable end to end — Boot → Title → Intro → World
-Map → 1-1 (with the storm-drain bonus room) → Level Clear → back to the map, with saving. See
+Map → 1-1 (with the storm-drain bonus room) → Level Clear → the 44 bus rides to the next stop on
+the painted Ballard map, with saving. See
 `CLAUDE.md` for the build plan and `docs/` for the design bundle.
 
 ## Run it
@@ -16,7 +17,12 @@ npm run dev          # http://localhost:5173
 
 Controls: ← → move · ↓ crouch · ↑ jump · **A** throw (Rain Jacket) · **S** sprint · **Space** pause.
 Gamepad: d-pad / stick, Up = jump, A/B buttons (Options → "Modern" puts jump on A).
-Touch controls appear automatically on phones; add `?touch=1` to force them on desktop.
+On phones a wooden controller appears on both sides of the game (d-pad + pause on the left,
+paw-print jump, A and B on the right) so your thumbs never cover the screen; add `?touch=1` to
+force it on desktop. Vibration (Options → Vibration) pulses on block bumps, hits, stomps,
+power-ups, 1-ups, geoducks, the checkpoint and level clear. It works in Android browsers and the
+future Capacitor app; iPhone Safari gets a light tick where supported; browsers that block it
+(including pages embedded in a cross-origin frame) just skip it.
 Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 
 ## Scripts
@@ -58,8 +64,9 @@ the World 1 generations in `art/higgsfield`, listed with their job ids in that f
 `npm run gen:art` rebuilds everything from those images; swapping art is a file replace there
 followed by `npm run gen:art && npm run pack:atlases`. Decor is placed as `prop` objects in the
 map so each sprite keeps its painted shape instead of being chopped into tiles. Each sprite is a
-single pose for now (no frame-by-frame animation yet). All music and SFX are synthesized in
-`AudioManager` until real tracks land in `public/assets/audio/`.
+single pose for now (no frame-by-frame animation yet). Music and sound effects are Epidemic Sound recordings in `public/assets/audio/` (see
+`CREDITS.md`), fetched at boot and decoded on the first tap or key press; the synthesized sounds
+in `AudioManager` remain as a fallback for anything not loaded yet.
 
 Deviation from the spec worth knowing: `JUMP_HOLD_GRAVITY_SCALE` is 0.6 (spec says 0.45) because
 with the spec's gravity and jump velocity 0.45 gives a 4.6-tile jump; 0.6 lands the full jump on

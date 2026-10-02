@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG, type PowerState } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
+import { Haptics } from '../core/haptics';
 import type { InputState } from '../core/input/InputState';
 import { jumpGravityScale, startJump, type JumpState } from '../core/physics/jump';
 import { powerAfterHit, type PowerUpKind } from '../data/powerups';
@@ -301,6 +302,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return true;
     }
     AudioManager.sfx('hurt');
+    Haptics.pulse('hurt');
     this.power = next;
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     this.freezeMs = CONFIG.GROW_FREEZE_MS;
@@ -315,6 +317,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   knockback(dirX: 1 | -1, speed: number): void {
     if (this.fsm === 'Dead' || this.fsm === 'Victory') return;
     this.body.setVelocity(dirX * speed, -260);
+    Haptics.pulse('stomp');
     if (this.iframesMs < CONFIG.KNOCKBACK_IFRAMES_MS) this.iframesMs = CONFIG.KNOCKBACK_IFRAMES_MS;
   }
 
@@ -332,6 +335,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.deadMs = 0;
     this.setDepth(60);
     AudioManager.sfx('die');
+    Haptics.pulse('die');
     this.applyPose(true);
   }
 
@@ -344,6 +348,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   applyPowerUp(kind: PowerUpKind): void {
+    if (kind !== 'star') Haptics.pulse('powerup');
     switch (kind) {
       case 'teriyaki':
         if (this.power === 'small') this.setPower('big', 'Grow');
@@ -359,7 +364,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.host.onFlannel(true);
         break;
       case 'star':
-        AudioManager.sfx('oneup');
         this.host.onExtraLife();
         break;
       case 'doubleshot':

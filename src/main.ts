@@ -12,7 +12,11 @@ import { OptionsScene } from './scenes/OptionsScene';
 import { PauseScene } from './scenes/PauseScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
-import { TouchControlsScene } from './ui/TouchControls';
+import { mountTouchPanels, wantsTouchControls } from './ui/TouchControls';
+
+// Phones get a wooden controller on both sides of the game instead of buttons drawn over it.
+const gameEl = document.getElementById('game');
+if (gameEl && wantsTouchControls()) mountTouchPanels(gameEl);
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -45,9 +49,12 @@ const game = new Phaser.Game({
   input: { keyboard: true, gamepad: false, touch: true, activePointers: 4 },
   scene: [
     BootScene, TitleScene, IntroScene, WorldMapScene, GameScene, HUDScene, PauseScene,
-    OptionsScene, CreditsScene, GalleryScene, LevelClearScene, GameOverScene, TouchControlsScene,
+    OptionsScene, CreditsScene, GalleryScene, LevelClearScene, GameOverScene,
   ],
 });
+
+// Start fetching music and sound effects right away; they decode on the first input.
+AudioManager.preload('assets/audio/');
 
 // Web Audio needs a user gesture: route *every* first input through unlock().
 for (const ev of ['keydown', 'pointerdown', 'touchstart'] as const) {
@@ -67,7 +74,7 @@ window.addEventListener('visibilitychange', () => {
 // test hooks (Playwright reads these)
 declare global {
   interface Window {
-    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; activeScenes: () => string[] };
+    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[] };
   }
 }
 window.__jimothy = {
@@ -101,5 +108,6 @@ window.__jimothy = {
     const s = game.scene.getScene('Game') as GameScene | null;
     return s && game.scene.isActive('Game') ? s.enemySnapshot() : [];
   },
+  audio: () => ({ files: AudioManager.status(), playing: AudioManager.playing }),
   activeScenes: () => game.scene.getScenes(true).map((s) => s.scene.key),
 };

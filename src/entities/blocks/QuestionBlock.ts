@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../../config';
 import { AudioManager } from '../../core/audio/AudioManager';
+import { Haptics } from '../../core/haptics';
 
 export interface BlockHost {
   spawnFromBlock(item: string, x: number, y: number): void;
@@ -49,6 +50,7 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
   }
 
   bump(host: BlockHost): void {
+    Haptics.pulse('bump');
     if (this.used) {
       AudioManager.sfx('bump');
       return;

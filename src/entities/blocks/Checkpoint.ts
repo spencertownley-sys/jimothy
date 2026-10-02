@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AudioManager } from '../../core/audio/AudioManager';
+import { Haptics } from '../../core/haptics';
 
 /** Coffee Stand. Touch to activate; the cup starts steaming. */
 export class Checkpoint extends Phaser.Physics.Arcade.Sprite {
@@ -26,6 +27,7 @@ export class Checkpoint extends Phaser.Physics.Arcade.Sprite {
     this.activated = true;
     this.setFrame('checkpoint_on');
     AudioManager.sfx('checkpoint');
+    Haptics.pulse('checkpoint');
     this.scene.tweens.add({ targets: this, scaleY: 1.08, duration: 120, yoyo: true });
   }
 }

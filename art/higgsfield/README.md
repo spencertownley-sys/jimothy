@@ -27,3 +27,10 @@ Files here are 2048 px JPEG copies of the originals.
 | 15_bg_mid.jpg | mid parallax (craftsman houses) | 929b21c5-8751-4396-b1cb-d9b9e562231a |
 | 16_bg_near.jpg | near parallax (ferns) | d4314ab1-9a6f-45c0-b4f1-683a2e126908 |
 | 17_fx.jpg | raindrop, dust puff, stone chip, sparkle ring | 494325f2-d424-45a1-b3f2-a908e7ab9e3d |
+| 20_btn_dpad.jpg | touch controller d-pad | 7ac2f3b8-eb6c-473e-a785-21532a861bf0 |
+| 21_btn_a.jpg | touch controller A button | 73141f23-d11d-4ac5-8faa-b95af5f8b932 |
+| 22_btn_b.jpg | touch controller B button | 24f8cf7b-5704-4a6f-bd40-165f6ee8b7e6 |
+| 23_btn_jump.jpg | touch controller jump (paw) button | e3000f9b-eb21-4367-ba77-9e1ef981a4f1 |
+| 24_btn_pause.jpg | touch controller pause button | 4b19bd1e-ff20-40b6-b318-4a9e5c68722e |
+| 25_panel_wood.jpg | wooden side panels behind the buttons | e427dc7b-1704-44ff-9681-ff7ef0761f13 |
+| 26_map_ballard.jpg | World 1 map (Ballard, the Locks, Golden Gardens) | 296bcb4a-8042-4eb5-b1f7-d80d89b9c710 |

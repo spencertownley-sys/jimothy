@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AudioManager } from '../../core/audio/AudioManager';
 import type { TiledObjectLike } from '../../core/tiled';
 import { ENEMIES } from '../../data/entities';
 import { Enemy, type EnemyContext } from './Enemy';
@@ -19,6 +20,7 @@ export class HoppingCone extends Enemy {
         this.restMs = this.def.params.hopEveryMs;
         this.dir = ctx.player.x < this.x ? -1 : 1;
         this.body.setVelocity(this.dir * this.def.speed, this.def.params.hopVy);
+        if (Math.abs(this.x - ctx.player.x) < 420) AudioManager.sfx('boing');
         this.applyFacing();
       }
     } else if (this.body.blocked.left || this.body.blocked.right) {

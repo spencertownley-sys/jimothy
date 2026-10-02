@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../../config';
 import { AudioManager } from '../../core/audio/AudioManager';
+import { Haptics } from '../../core/haptics';
 import { getProp, type TiledObjectLike } from '../../core/tiled';
 import type { EnemyDef } from '../../data/entities';
 import type { Player } from '../Player';
@@ -85,6 +86,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.def.stompable || !this.alive) return false;
     this.hp -= 1;
     AudioManager.sfx('stomp');
+    Haptics.pulse('stomp');
     if (this.hp <= 0) this.squish(ctx);
     return true;
   }

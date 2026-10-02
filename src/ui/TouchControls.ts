@@ -1,8 +1,7 @@
-import Phaser from 'phaser';
-import { CONFIG } from '../config';
+import { Haptics } from '../core/haptics';
 import { getInput } from '../core/input';
-import type { InputSnapshot } from '../core/input/InputState';
-import { Save } from '../core/save/Save';
+import type { InputKey } from '../core/input/InputState';
+import { AudioManager } from '../core/audio/AudioManager';
 
 /** True on phones/tablets, or when forced via ?touch=1 for desktop testing. */
 export function wantsTouchControls(): boolean {
@@ -11,122 +10,181 @@ export function wantsTouchControls(): boolean {
   return window.matchMedia?.('(pointer: coarse)').matches ?? false;
 }
 
-/** Reads env(safe-area-inset-*) through a probe element; 0 on desktop. */
-export function readSafeArea(): { top: number; right: number; bottom: number; left: number } {
-  const out = { top: 0, right: 0, bottom: 0, left: 0 };
-  if (typeof document === 'undefined') return out;
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left)';
-  document.body.appendChild(probe);
-  const cs = getComputedStyle(probe);
-  out.top = parseFloat(cs.paddingTop) || 0;
-  out.right = parseFloat(cs.paddingRight) || 0;
-  out.bottom = parseFloat(cs.paddingBottom) || 0;
-  out.left = parseFloat(cs.paddingLeft) || 0;
-  probe.remove();
-  return out;
+const CSS = `
+.jt-shell { display: flex; width: 100%; height: 100%; align-items: stretch; background: #10201c; }
+.jt-shell > #game { flex: 1 1 auto; min-width: 0; height: 100%; }
+.jt-panel {
+  flex: 0 0 clamp(128px, 18vw, 210px); position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between; box-sizing: border-box;
+  background: #14271f url("assets/ui/panel.jpg") center / cover;
+  box-shadow: inset 0 0 24px rgba(0,0,0,.55);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(14px, env(safe-area-inset-bottom));
 }
+.jt-left { padding-left: max(6px, env(safe-area-inset-left)); padding-right: 6px; border-right: 3px solid #2a1a0e; }
+.jt-right { padding-right: max(6px, env(safe-area-inset-right)); padding-left: 6px; border-left: 3px solid #2a1a0e; }
+.jt-btn {
+  display: block; aspect-ratio: 1; background: center / contain no-repeat; border: 0; padding: 0;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.55)); transition: transform 60ms ease-out, filter 60ms;
+  -webkit-tap-highlight-color: transparent; touch-action: none;
+}
+.jt-btn.is-down { transform: scale(.9) translateY(2px); filter: brightness(1.25) drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.jt-pause { width: 46%; max-width: 64px; background-image: url("assets/ui/btn_pause.png"); }
+.jt-dpad { width: 96%; max-width: 200px; background-image: url("assets/ui/dpad.png"); margin-bottom: 6%; }
+.jt-dpad.d-left { transform: perspective(300px) rotateY(-14deg); }
+.jt-dpad.d-right { transform: perspective(300px) rotateY(14deg); }
+.jt-dpad.d-down { transform: perspective(300px) rotateX(-14deg); }
+.jt-dpad.d-up { transform: perspective(300px) rotateX(14deg); }
+.jt-jump { width: 82%; max-width: 168px; background-image: url("assets/ui/btn_jump.png"); }
+.jt-row { display: flex; width: 100%; justify-content: space-between; align-items: flex-end; margin-bottom: 4%; }
+.jt-a { width: 50%; max-width: 104px; background-image: url("assets/ui/btn_a.png"); margin-top: -8%; }
+.jt-b { width: 46%; max-width: 96px; background-image: url("assets/ui/btn_b.png"); margin-top: 18%; }
+.jt-spacer { flex: 1 1 auto; }
+`;
 
-interface Button {
-  key: keyof InputSnapshot;
-  x: number;
-  y: number;
-  r: number;
-  label: string;
-  gfx: Phaser.GameObjects.Arc;
-  pressed: boolean;
-}
+const DIRS: readonly InputKey[] = ['left', 'right', 'down', 'jump'];
 
 /**
- * Overlay scene: d-pad on the left 35 % of the screen, A/B (and optional Jump) on the right 30 %,
- * pause at top-center. Multi-touch; a finger sliding from ← to ↓ crouch-slides without lifting.
- * It only writes into TouchSource — gameplay still reads InputState.
+ * Builds the off-screen controller: two wooden side panels with Higgsfield-painted buttons,
+ * placed beside the game canvas (never over it). Left: pause + d-pad (up on the d-pad also
+ * jumps). Right: a big jump button with A (throw) and B (sprint) below. Multi-touch; a thumb can
+ * slide across the d-pad without lifting. Writes only into TouchSource.
  */
-export class TouchControlsScene extends Phaser.Scene {
-  private buttons: Button[] = [];
-  private dpad!: { x: number; y: number; r: number; dead: number; base: Phaser.GameObjects.Arc; knob: Phaser.GameObjects.Arc };
-  private pauseBtn!: Phaser.GameObjects.Arc;
-  private pausePressed = false;
+export function mountTouchPanels(gameEl: HTMLElement): void {
+  if (document.querySelector('.jt-shell')) return;
+  const style = document.createElement('style');
+  style.textContent = CSS;
+  document.head.appendChild(style);
 
-  constructor() {
-    super({ key: 'Touch' });
+  const shell = document.createElement('div');
+  shell.className = 'jt-shell';
+  gameEl.parentElement?.insertBefore(shell, gameEl);
+  const left = panel('jt-panel jt-left');
+  const right = panel('jt-panel jt-right');
+  shell.append(left, gameEl, right);
+
+  const touch = getInput().touch;
+
+  // left: pause on top, d-pad at thumb height
+  const pause = button('jt-btn jt-pause', 'Pause');
+  const dpad = button('jt-btn jt-dpad', 'Direction pad');
+  left.append(pause, spacer(), dpad);
+  holdButton(pause, 'start');
+  dpadControl(dpad);
+
+  // right: jump on top, B and A below
+  const jump = button('jt-btn jt-jump', 'Jump');
+  const row = document.createElement('div');
+  row.className = 'jt-row';
+  const b = button('jt-btn jt-b', 'B: sprint');
+  const a = button('jt-btn jt-a', 'A: throw');
+  row.append(b, a);
+  right.append(spacer(), jump, row);
+  holdButton(jump, 'jump');
+  holdButton(a, 'a');
+  holdButton(b, 'b');
+
+  // never let a stuck finger keep Jimothy running
+  window.addEventListener('blur', () => touch.clear());
+  document.addEventListener('visibilitychange', () => document.hidden && touch.clear());
+
+  function panel(cls: string): HTMLDivElement {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+    return el;
   }
 
-  create(): void {
-    this.input.addPointer(3);
-    const W = CONFIG.WIDTH;
-    const H = CONFIG.HEIGHT;
-    const safe = readSafeArea();
-    // CSS px → logical px: the canvas is scaled to fit, so convert through the scale factor.
-    const sx = this.scale.displayScale.x || 1;
-    const sy = this.scale.displayScale.y || 1;
-    const inset = { l: safe.left * sx, r: safe.right * sx, b: safe.bottom * sy, t: safe.top * sy };
-    const layout = Save.get().options.touchLayout;
+  function spacer(): HTMLDivElement {
+    const el = document.createElement('div');
+    el.className = 'jt-spacer';
+    return el;
+  }
 
-    const base = this.add.circle(0.12 * W + inset.l, 0.72 * H - inset.b, 90, 0xf4efe6, 0.4);
-    const knob = this.add.circle(base.x, base.y, 34, 0xf4efe6, 0.5);
-    this.dpad = { x: base.x, y: base.y, r: 90, dead: 20, base, knob };
-    for (const [dx, dy, ch] of [[-58, 0, '◀'], [58, 0, '▶'], [0, 58, '▼']] as const) {
-      this.add.text(base.x + dx, base.y + dy, ch, { fontSize: '22px', color: '#1C2426' }).setOrigin(0.5).setAlpha(0.6);
-    }
+  function button(cls: string, label: string): HTMLDivElement {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', label);
+    return el;
+  }
 
-    const mk = (key: keyof InputSnapshot, x: number, y: number, label: string): void => {
-      const gfx = this.add.circle(x, y, 42, 0xf4efe6, 0.4);
-      this.add.text(x, y, label, { fontSize: '26px', color: '#1C2426', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(0.7);
-      this.buttons.push({ key, x, y, r: 48, label, gfx, pressed: false });
+  function firstTouch(): void {
+    AudioManager.unlock();
+  }
+
+  function holdButton(el: HTMLElement, key: InputKey): void {
+    const pointers = new Set<number>();
+    const update = (): void => {
+      el.classList.toggle('is-down', pointers.size > 0);
     };
-    mk('a', 0.9 * W - inset.r, 0.68 * H - inset.b, 'A');
-    mk('b', 0.82 * W - inset.r, 0.8 * H - inset.b, 'B');
-    if (layout === 'jumpButton') mk('jump', 0.9 * W - inset.r, 0.48 * H - inset.b, '↑');
-    this.pauseBtn = this.add.circle(0.5 * W, 0.06 * H + inset.t, 22, 0xf4efe6, 0.4);
-    this.add.text(this.pauseBtn.x, this.pauseBtn.y, '❚❚', { fontSize: '16px', color: '#1C2426' }).setOrigin(0.5).setAlpha(0.7);
-    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => getInput().touch.clear());
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      firstTouch();
+      el.setPointerCapture?.(e.pointerId);
+      if (pointers.size === 0) {
+        touch.press(key);
+        Haptics.pulse('tap');
+      }
+      pointers.add(e.pointerId);
+      update();
+    });
+    const up = (e: PointerEvent): void => {
+      pointers.delete(e.pointerId);
+      if (pointers.size === 0) touch.release(key);
+      update();
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('lostpointercapture', up);
   }
 
-  override update(): void {
-    const snap: Partial<InputSnapshot> = {};
-    const pointers = this.input.manager.pointers;
-    let dpadActive = false;
-    let pauseNow = false;
-    for (const b of this.buttons) b.pressed = false;
-    for (const p of pointers) {
-      if (!p.isDown) continue;
-      const x = p.x;
-      const y = p.y;
-      // d-pad zone: anything in the left 35 % claims the finger
-      if (p.downX < CONFIG.WIDTH * 0.35) {
-        dpadActive = true;
-        const dx = x - this.dpad.x;
-        const dy = y - this.dpad.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist > this.dpad.dead) {
-          const ang = Math.atan2(dy, dx);
-          if (Math.abs(dx) > this.dpad.dead) {
-            if (dx < 0) snap.left = true;
-            else snap.right = true;
-          }
-          if (dy > this.dpad.dead && Math.abs(ang) > Math.PI / 6) snap.down = true;
-        }
-        // swipe-up from anywhere in the zone jumps
-        if (p.downY - y > 36) snap.jump = true;
-        const k = Math.min(dist, this.dpad.r) / Math.max(dist, 1);
-        this.dpad.knob.setPosition(this.dpad.x + dx * k, this.dpad.y + dy * k);
-        continue;
+  function dpadControl(el: HTMLElement): void {
+    let pointer: number | null = null;
+    let last = '';
+    const apply = (e: PointerEvent): void => {
+      const r = el.getBoundingClientRect();
+      // -1..1 from the d-pad centre
+      const dx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      const dy = ((e.clientY - r.top) / r.height) * 2 - 1;
+      const keys: InputKey[] = [];
+      if (Math.hypot(dx, dy) > 0.2) {
+        if (dx < -0.3) keys.push('left');
+        if (dx > 0.3) keys.push('right');
+        if (dy > 0.35) keys.push('down');
+        if (dy < -0.45 && Math.abs(dx) < 0.55) keys.push('jump');
       }
-      for (const b of this.buttons) {
-        if (Math.hypot(x - b.x, y - b.y) <= b.r) {
-          b.pressed = true;
-          snap[b.key] = true;
-        }
+      const sig = keys.join(',');
+      if (sig !== last) {
+        if (keys.length) Haptics.pulse('tap');
+        last = sig;
       }
-      if (Math.hypot(x - this.pauseBtn.x, y - this.pauseBtn.y) <= 30) pauseNow = true;
-    }
-    if (!dpadActive) this.dpad.knob.setPosition(this.dpad.x, this.dpad.y);
-    this.dpad.base.setAlpha(dpadActive ? 0.7 : 0.4);
-    for (const b of this.buttons) b.gfx.setAlpha(b.pressed ? 0.7 : 0.4);
-    if (pauseNow && !this.pausePressed) snap.start = true;
-    this.pausePressed = pauseNow;
-    getInput().touch.set(snap);
+      touch.setHeld(keys, DIRS);
+      el.classList.remove('d-left', 'd-right', 'd-down', 'd-up');
+      if (keys.includes('left')) el.classList.add('d-left');
+      if (keys.includes('right')) el.classList.add('d-right');
+      if (keys.includes('down')) el.classList.add('d-down');
+      if (keys.includes('jump')) el.classList.add('d-up');
+    };
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      firstTouch();
+      pointer = e.pointerId;
+      el.setPointerCapture?.(e.pointerId);
+      apply(e);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerId === pointer) apply(e);
+    });
+    const end = (e: PointerEvent): void => {
+      if (e.pointerId !== pointer) return;
+      pointer = null;
+      last = '';
+      touch.setHeld([], DIRS);
+      el.classList.remove('d-left', 'd-right', 'd-down', 'd-up');
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('lostpointercapture', end);
   }
 }

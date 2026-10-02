@@ -24,7 +24,7 @@ export class PauseScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H / 2, 560, 420, 0xf4efe6, 1).setStrokeStyle(6, 0x8a6a40);
     uiText(this, W / 2, H / 2 - 160, 'PAUSED', { fontSize: 40, color: COLORS.ink, stroke: false }).setOrigin(0.5);
     const controls = wantsTouchControls()
-      ? 'd-pad move/crouch · ↑ or swipe up jump · A throw · B sprint'
+      ? 'd-pad move · ↓ crouch · paw button or d-pad ↑ jump · A throw · B sprint'
       : '← → move · ↓ crouch · ↑ jump · A throw · S sprint · Space pause';
     uiText(this, W / 2, H / 2 + 170, controls, { fontSize: 16, color: COLORS.ink, display: false, stroke: false }).setOrigin(0.5);
     this.menu = new Menu(this, W / 2 - 180, H / 2 - 80, [

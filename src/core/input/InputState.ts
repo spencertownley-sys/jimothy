@@ -17,6 +17,7 @@ export class InputState {
   private cur: InputSnapshot = emptySnapshot();
   private prev: InputSnapshot = emptySnapshot();
   private sources: InputSource[] = [];
+  private swallowHeld = false;
 
   constructor(sources: InputSource[] = []) {
     this.sources = [...sources];
@@ -37,6 +38,12 @@ export class InputState {
     for (const src of this.sources) {
       const s = src.read();
       for (const k of INPUT_KEYS) if (s[k]) next[k] = true;
+    }
+    // After reset(), anything still held from the previous screen is treated as already
+    // pressed, so one tap never fires twice across a scene change.
+    if (this.swallowHeld) {
+      this.prev = { ...next };
+      this.swallowHeld = false;
     }
     this.cur = next;
   }
@@ -63,9 +70,10 @@ export class InputState {
     return { ...this.cur };
   }
 
-  /** Forget held keys (scene change, pause) so nothing "sticks". */
+  /** Scene change / pause: forget edges; keys still held must be released before they fire again. */
   reset(): void {
     this.cur = emptySnapshot();
     this.prev = emptySnapshot();
+    this.swallowHeld = true;
   }
 }

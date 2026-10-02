@@ -200,4 +200,23 @@ mirror $TMP/near.png $BG/bg_ballard_near.png
 # title key art + world map backdrop (both from the concept set)
 convert $C/23_title_key_art_v3.jpg -resize 1280x720^ -gravity center -extent 1280x720 -quality 85 $BG/title_keyart.jpg
 convert $C/03_bg_world1_ballard.jpg -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x6 -modulate 70,80 -quality 80 $BG/worldmap.jpg
+# ---- Touch controller (DOM panels beside the game, not over it) -----------------------
+UI=public/assets/ui; mkdir -p $UI
+uicut() { # uicut <src> <out> <size>: flood-fill the grey ground away, trim, square-pad, resize
+  local src="$1" out="$2" size="$3"
+  convert "$src" -alpha set -fuzz 9% -fill none \
+    -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -draw "matte 2,2045 floodfill" -draw "matte 2045,2045 floodfill" \
+    -trim +repage "$TMP/uicut.png"
+  local side; side=$(convert "$TMP/uicut.png" -format '%[fx:max(w,h)]' info:)
+  convert "$TMP/uicut.png" -gravity center -background none -extent "${side}x${side}" \
+    -resize "${size}x${size}" -depth 8 "$out"
+}
+uicut $HF/20_btn_dpad.jpg  $UI/dpad.png  256
+uicut $HF/21_btn_a.jpg     $UI/btn_a.png 176
+uicut $HF/22_btn_b.jpg     $UI/btn_b.png 176
+uicut $HF/23_btn_jump.jpg  $UI/btn_jump.png 196
+uicut $HF/24_btn_pause.jpg $UI/btn_pause.png 112
+convert $HF/25_panel_wood.jpg -resize 360x -quality 80 $UI/panel.jpg
+# World 1 map (Ballard: the neighbourhood, the Locks, Golden Gardens)
+convert $HF/26_map_ballard.jpg -resize '1280x720!' -quality 86 $BG/map_ballard.jpg
 echo "art generated"

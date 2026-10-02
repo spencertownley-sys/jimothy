@@ -85,7 +85,8 @@ export class LevelClearScene extends Phaser.Scene {
     this.input_.update();
     if (!this.ready) return;
     if (this.input_.justPressed('start') || this.input_.justPressed('a')) {
-      this.scene.start('WorldMap', { focus: this.data_.next ?? this.data_.levelId });
+      // ride the bus from the level just cleared to the next stop on the map
+      this.scene.start('WorldMap', { focus: this.data_.next ?? this.data_.levelId, from: this.data_.levelId });
     }
   }
 }

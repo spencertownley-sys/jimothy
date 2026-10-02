@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
+import { Haptics } from '../core/haptics';
 import { getInput } from '../core/input';
 import { Save } from '../core/save/Save';
 import { Menu } from '../ui/Menu';
@@ -37,16 +38,16 @@ export class OptionsScene extends Phaser.Scene {
       AudioManager.applyVolumes();
       getInput().refreshFromSave();
     };
-    this.menu = new Menu(this, W / 2 - 340, 190, [
+    this.menu = new Menu(this, W / 2 - 340, 172, [
       { label: 'Music', value: () => pct(o.musicVol), onLeft: () => { o.musicVol = step(o.musicVol, -0.1); commit(); }, onRight: () => { o.musicVol = step(o.musicVol, 0.1); commit(); } },
       { label: 'Sound', value: () => pct(o.sfxVol), onLeft: () => { o.sfxVol = step(o.sfxVol, -0.1); commit(); }, onRight: () => { o.sfxVol = step(o.sfxVol, 0.1); commit(); } },
       { label: 'Timer', value: () => onOff(o.showTimer), onLeft: () => { o.showTimer = !o.showTimer; commit(); }, onRight: () => { o.showTimer = !o.showTimer; commit(); } },
       { label: 'Drizzle', value: () => onOff(o.drizzle), onLeft: () => { o.drizzle = !o.drizzle; commit(); }, onRight: () => { o.drizzle = !o.drizzle; commit(); } },
       { label: 'Reduce motion', value: () => onOff(o.reduceMotion), onLeft: () => { o.reduceMotion = !o.reduceMotion; commit(); }, onRight: () => { o.reduceMotion = !o.reduceMotion; commit(); } },
-      { label: 'Touch layout', value: () => (o.touchLayout === 'jumpButton' ? 'Jump button' : 'Classic'), onLeft: () => { o.touchLayout = o.touchLayout === 'classic' ? 'jumpButton' : 'classic'; commit(); }, onRight: () => { o.touchLayout = o.touchLayout === 'classic' ? 'jumpButton' : 'classic'; commit(); } },
+      { label: 'Vibration', value: () => onOff(o.haptics), onLeft: () => { o.haptics = !o.haptics; commit(); if (o.haptics) Haptics.pulse('bump'); }, onRight: () => { o.haptics = !o.haptics; commit(); if (o.haptics) Haptics.pulse('bump'); } },
       { label: 'Gamepad', value: () => (o.gamepadPreset === 'modern' ? 'Modern (A = jump)' : 'Classic (↑ = jump)'), onLeft: () => { o.gamepadPreset = o.gamepadPreset === 'classic' ? 'modern' : 'classic'; commit(); }, onRight: () => { o.gamepadPreset = o.gamepadPreset === 'classic' ? 'modern' : 'classic'; commit(); } },
       { label: 'Back', onSelect: () => this.back() },
-    ], { gap: 50, fontSize: 28, width: 680 });
+    ], { gap: 44, fontSize: 26, width: 680 });
     this.menu.onCancel = () => this.back();
     uiText(this, W / 2, H - 70, 'Key remapping arrives in v1.1', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(0.5);
     this.input_.reset();

@@ -7,11 +7,12 @@ import { Save } from '../core/save/Save';
 import { FIRST_LEVEL } from '../core/save/SaveV1';
 import { mapLevels, type LevelDef } from '../levels/LevelDef';
 import { COLORS, uiText } from '../ui/text';
-import { wantsTouchControls } from '../ui/TouchControls';
 
 interface MapData {
   toast?: string;
   focus?: string;
+  /** level just cleared: the 44 bus drives from here to `focus` */
+  from?: string;
 }
 
 export class WorldMapScene extends Phaser.Scene {
@@ -38,21 +39,25 @@ export class WorldMapScene extends Phaser.Scene {
     this.index = Math.max(0, this.levels.findIndex((l) => l.id === focus));
     if (!save.unlocked.includes(this.levels[this.index].id)) this.index = 0;
 
-    if (this.textures.exists('bg:worldmap')) this.add.image(W / 2, H / 2, 'bg:worldmap');
+    // World 1 shows only Ballard: the neighbourhood, the Locks and Golden Gardens.
+    if (this.textures.exists('bg:map_ballard')) this.add.image(W / 2, H / 2, 'bg:map_ballard');
+    else if (this.textures.exists('bg:worldmap')) this.add.image(W / 2, H / 2, 'bg:worldmap');
     else this.cameras.main.setBackgroundColor(COLORS.cedar);
-    uiText(this, W / 2, 50, 'WORLD 1  ·  BALLARD', { fontSize: 40, color: COLORS.amber }).setOrigin(0.5);
+    uiText(this, W / 2, 46, 'WORLD 1  ·  BALLARD', { fontSize: 40, color: COLORS.amber }).setOrigin(0.5).setStroke(COLORS.ink, 8);
 
-    // dotted route between nodes
+    // the 44's route between stops: cream dashes on a dark outline so they read over the houses
     const g = this.add.graphics();
-    g.lineStyle(4, 0xf4efe6, 0.7);
-    for (let i = 0; i < this.levels.length - 1; i++) {
-      const a = this.levels[i].map!;
-      const b = this.levels[i + 1].map!;
-      const steps = 12;
-      for (let s = 0; s < steps; s += 2) {
-        const p0 = Phaser.Math.Linear(0, 1, s / steps);
-        const p1 = Phaser.Math.Linear(0, 1, (s + 1) / steps);
-        g.lineBetween(a.x + (b.x - a.x) * p0, a.y + (b.y - a.y) * p0, a.x + (b.x - a.x) * p1, a.y + (b.y - a.y) * p1);
+    for (const [width, color, alpha] of [[9, 0x1c2426, 0.55], [5, 0xf4efe6, 0.95]] as const) {
+      g.lineStyle(width, color, alpha);
+      for (let i = 0; i < this.levels.length - 1; i++) {
+        const a = this.levels[i].map!;
+        const b = this.levels[i + 1].map!;
+        const steps = Math.max(8, Math.round(Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y) / 22));
+        for (let s = 1; s < steps - 1; s += 2) {
+          const p0 = s / steps;
+          const p1 = (s + 1) / steps;
+          g.lineBetween(a.x + (b.x - a.x) * p0, a.y + (b.y - a.y) * p0, a.x + (b.x - a.x) * p1, a.y + (b.y - a.y) * p1);
+        }
       }
     }
     for (const lvl of this.levels) {
@@ -67,8 +72,8 @@ export class WorldMapScene extends Phaser.Scene {
         if (i === this.index) this.enter();
         else this.moveTo(i);
       });
-      uiText(this, lvl.map!.x, lvl.map!.y + 46, lvl.id, { fontSize: 22 }).setOrigin(0.5);
-      if (!lvl.file) uiText(this, lvl.map!.x, lvl.map!.y + 70, 'soon', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(0.5);
+      uiText(this, lvl.map!.x, lvl.map!.y + 44, `${lvl.id}  ${lvl.name}`, { fontSize: 20 }).setOrigin(0.5).setStroke(COLORS.ink, 5);
+      if (!lvl.file) uiText(this, lvl.map!.x, lvl.map!.y + 68, 'coming soon', { fontSize: 15, color: COLORS.paper, display: false }).setOrigin(0.5).setStroke(COLORS.ink, 4);
     }
     this.cursor = this.add.image(0, 0, 'jimothy', 'small_idle').setOrigin(0.5, 1).setDepth(5);
     this.tweens.add({ targets: this.cursor, y: '-=6', duration: 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -81,9 +86,10 @@ export class WorldMapScene extends Phaser.Scene {
     this.card = { name, info, ducks };
     uiText(this, W / 2, H - 16, '◀ ▶ choose   ·   A / START enter   ·   B back', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(0.5);
     this.placeCursor();
+    const from = data?.from ? this.levels.find((l) => l.id === data.from) : undefined;
+    if (from?.map && from !== this.levels[this.index]) this.rideBus(from.map, this.levels[this.index].map!);
     AudioManager.music('title');
     if (data?.toast) this.toast(data.toast);
-    if (wantsTouchControls() && !this.scene.isActive('Touch')) this.scene.launch('Touch');
     if (this.scene.isActive('HUD')) this.scene.stop('HUD');
   }
 
@@ -97,6 +103,29 @@ export class WorldMapScene extends Phaser.Scene {
     this.card.info.setText(lvl.file ? (best !== undefined ? `Best ${fmt(best)}  ·  par ${fmt(lvl.par * 1000)}` : `par ${fmt(lvl.par * 1000)}`) : 'Coming soon — more of Seattle is on the way.');
     const found = save.geoducks[lvl.id] ?? [false, false, false];
     this.card.ducks.forEach((d, i) => d.setAlpha(found[i] ? 1 : 0.25));
+  }
+
+  /** The 44 bus carries Jimothy along the route to the next stop after a level clear. */
+  private rideBus(a: { x: number; y: number }, b: { x: number; y: number }): void {
+    this.busy = true;
+    this.cursor.setVisible(false);
+    const bus = this.add.image(a.x, a.y, 'blocks', 'bus').setOrigin(0.5, 1).setScale(0.36).setDepth(6);
+    bus.setFlipX(b.x < a.x);
+    this.tweens.add({
+      targets: bus,
+      x: b.x,
+      y: b.y - 6,
+      delay: 500,
+      duration: 1900,
+      ease: 'Sine.inOut',
+      onUpdate: () => bus.setAngle(Math.sin(this.time.now / 70) * 2),
+      onComplete: () => {
+        AudioManager.sfx('menu_select');
+        this.tweens.add({ targets: bus, alpha: 0, duration: 300, onComplete: () => bus.destroy() });
+        this.cursor.setVisible(true);
+        this.busy = false;
+      },
+    });
   }
 
   private moveTo(i: number): void {
