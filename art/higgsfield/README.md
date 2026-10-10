@@ -34,10 +34,10 @@ Files here are 2048 px JPEG copies of the originals.
 | 24_btn_pause.jpg | touch controller pause button | 4b19bd1e-ff20-40b6-b318-4a9e5c68722e |
 | 25_panel_wood.jpg | wooden side panels behind the buttons | e427dc7b-1704-44ff-9681-ff7ef0761f13 |
 | 26_map_ballard.jpg | World 1 map (Ballard, the Locks, Golden Gardens) | 296bcb4a-8042-4eb5-b1f7-d80d89b9c710 |
-| 30_story_den.jpg | opening scene: the gaze in their cedar | bc1186f5-88a5-4740-b106-56d31ce11a1a |
-| 31_story_porch.jpg | opening scene: Jimothy stuck under a porch | 0372d1a2-27c4-437a-87ed-960bd4cde902 |
+| 30_story_den.jpg | opening scene: the gaze in their cedar | 34ca4af4-28ae-486d-a45e-8e6a94aeb077 (on-model regen, image refs 21 + 22) |
+| 31_story_porch.jpg | opening scene: Jimothy stuck under a porch | 099fae73-acc7-49bf-9bcf-9a1a80c857d0 (on-model regen, image refs 21 + 22) |
 | 32_story_truck.jpg | opening scene: LUXE crew takes the family | b543f405-2824-405e-b24b-2f31b77ad3bc |
-| 33_story_stump.jpg | opening scene: the stump, the sign, the tracks | 21ee7ebc-1014-487d-99fa-2fcfacb51c89 |
+| 33_story_stump.jpg | opening scene: the stump, the sign, the tracks | 4278ee72-54d8-4f98-b1c5-5e1802c8d869 (on-model regen, image refs 21 + 22) |
 | 40_locks_far.jpg | 1-2 far parallax (Salmon Bay, rail bridge, Rainier) | c972bdc2-c7dc-4239-9b07-f7577ff1ee75 |
 | 41_locks_mid.jpg | 1-2 mid parallax (Locks admin building, gardens) | a479e860-ad84-48e7-9bcc-fdce2cccf9b1 |
 | 42_concrete_tex.jpg | lock-wall concrete tiles | ad9a743b-f584-45d3-9ed8-66c92966e7b5 |
@@ -57,10 +57,10 @@ Files here are 2048 px JPEG copies of the originals.
 | 56_kayak.jpg | orange kayak (1-3 exit) | d2ea0f8e-cd57-49e7-8d59-1b48f10e11af |
 | 57_goose_sheet.jpg | Canada Goose boss: honk, charge, flap, stunned | b88fec15-ed8d-4e3e-8b02-37c39f7c6bfc |
 | 58_beach_props.jpg | dune grass, picnic table, driftwood stump, sign, stones | 702549b7-1e62-4ee9-b0de-cf7c4f77b53f |
-| 60_story_locks_truck.jpg | 1-2 cutscene: the empty LUXE truck at the Locks | 6757bb65-6a6c-4581-b01d-903320396982 |
-| 61_story_herschel.jpg | 1-2 cutscene: Herschel, the crate rising in the lock | 9abe7d59-9ccb-4cc1-b4dc-839901a2c83a |
-| 62_story_goose_gang.jpg | 1-3 cutscene: the boat leaving, the goose gang | 0d202d99-af27-4f46-a25d-b5933e8f2019 |
-| 63_postcard_gardens.jpg | World 1 postcard: Greetings from Golden Gardens | 0ad0fddb-2a3c-479b-b1de-424bcb7b04d2 |
+| 60_story_locks_truck.jpg | 1-2 cutscene: the empty LUXE truck at the Locks | 946aaa1b-b662-48b7-9681-84fba71caa83 (on-model regen, image refs 21 + 22) |
+| 61_story_herschel.jpg | 1-2 cutscene: Herschel, the crate rising in the lock | 689f6378-5a8e-476a-80bc-da42e90c1b53 (on-model regen, image refs 21 + 22) |
+| 62_story_goose_gang.jpg | 1-3 cutscene: the boat leaving, the goose gang | 0f5405a6-b429-4232-92ea-6b8cba6c695d (on-model regen, image refs 21 + 22) |
+| 63_postcard_gardens.jpg | World 1 postcard: Greetings from Golden Gardens | 09f46436-fca7-4789-bb22-3114521d326e (on-model regen, image refs 21 + 22) |
 | 64_dock_planks.jpg | dock plank one-way platforms (1-2) | 9cd11e47-5d4c-484e-b0bb-2fa13a351784 |
 | 65_driftwood_platform.jpg | driftwood log one-way platforms (1-3) | cbaae491-6921-437f-8949-26a52a28fad6 |
 | 66_cart_logpile.jpg | runaway shopping cart, driftwood barricade (arena walls) | 6649c822-9c4c-4127-b8c5-dfc4ddd06ab4 |

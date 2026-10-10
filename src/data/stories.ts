@@ -29,15 +29,15 @@ export const STORIES: Record<string, Story> = {
       {
         image: 'story:den',
         caption: 'Ballard. One mossy cedar, one gaze of raccoons…\nand Jimothy, squished at the end.',
-        zoom: [1.0, 1.08],
-        focus: { x: 0.6, y: 0.45 },
+        zoom: [1.0, 1.1],
+        focus: { x: 0.68, y: 0.45 },
         holdMs: 5600,
       },
       {
         image: 'story:porch',
         caption: 'One rainy night the gaze went out foraging.\nJimothy got stuck under a porch. Again.',
-        zoom: [1.06, 1.0],
-        focus: { x: 0.7, y: 0.6 },
+        zoom: [1.1, 1.0],
+        focus: { x: 0.3, y: 0.62 },
         holdMs: 5600,
       },
       {
@@ -54,8 +54,8 @@ export const STORIES: Record<string, Story> = {
       {
         image: 'story:stump',
         caption: "All that was left: a stump, a sign,\nand a tuft of Mom's tail.",
-        zoom: [1.08, 1.0],
-        focus: { x: 0.72, y: 0.6 },
+        zoom: [1.1, 1.0],
+        focus: { x: 0.45, y: 0.5 },
         holdMs: 5600,
       },
       {
@@ -74,8 +74,8 @@ export const STORIES: Record<string, Story> = {
       {
         image: 'story:locks_truck',
         caption: 'The tire tracks ended at the Ballard Locks.\nThe LUXE truck was there. Empty.',
-        zoom: [1.0, 1.1],
-        focus: { x: 0.62, y: 0.45 },
+        zoom: [1.0, 1.12],
+        focus: { x: 0.7, y: 0.55 },
         sfx: [{ name: 'truck', at: 200 }],
         holdMs: 5600,
       },
@@ -90,7 +90,7 @@ export const STORIES: Record<string, Story> = {
         image: 'story:herschel',
         caption: 'But down in the lock, a crate stamped PEST RELOCATION\nwas rising on a boat. Catch that boat.',
         zoom: [1.05, 1.3],
-        focus: { x: 0.6, y: 0.58 },
+        focus: { x: 0.52, y: 0.6 },
         holdMs: 6000,
       },
     ],
