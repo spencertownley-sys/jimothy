@@ -101,10 +101,13 @@ Full level-by-level specs: `03_LEVEL_SPECS.md`.
 
 ## 6. Story (light, Mario-weight)
 
-- **Opening (10s, 3 panels):** Jimothy in his cedar. Chainsaw sfx. "COMING SOON: LUXE MICRO-LOFTS — STUDIOS FROM $2,950." Jimothy's face. He trots off.
+**Premise (chosen):** Jimothy lives with his *gaze* (a group of raccoons is called a gaze): Mom and four sleek, normal siblings, in a mossy Ballard cedar. He's the smallest and slowest; they always end up waiting for him. One rainy night the gaze goes out foraging and Jimothy gets wedged under a porch. While he's stuck, the LUXE MICRO-LOFTS crew cuts down the cedar, boxes the family into a crate stamped PEST RELOCATION and trucks them off. Jimothy, the least likely hero in Seattle and the only one left, follows the trail across the city.
+
+- **Opening (≈30 s, 5 painted panels, A advances, Start skips):** the gaze in the cedar → stuck under the porch → the LUXE truck takes the family → dawn: stump, COMING SOON sign, a tuft of Mom's tail, tire tracks → the Ballard map drifting toward the Locks: *"The smallest, slowest, least likely hero in Seattle. Also the only one left. Follow the tracks. Find the gaze."*
+- **Clues by world (planned):** Ballard: tire tracks to the Locks, a tail tuft on a fence · Pike Place: a fishmonger saw a crate marked LUXE · Seattle Center: the family on a "Raccoon Experience" pop-up poster · Fremont: the Bridge Troll was hired to guard the crate, and turns out to be a softie who points the way · Ferry: the crate is on the car deck to Bainbridge.
 - **Between worlds (1 panel each):** a postcard with one line. E.g. after World 2: *"Jimothy has acquired: a fish. He does not know why."*
-- **Ending:** Bainbridge cedar. The mother raccoon from the real story is there (brief, sweet). Pan up to Rainier. Title card: *"Praise Jimothy."* Credits over a rainy skyline.
-- **No dialogue, no cutscenes longer than 10s.** Everything skippable with Start.
+- **Ending:** Bainbridge. Jimothy pops the crate open; the gaze tumbles out. Mom is there (brief, sweet). A new cedar. Pan up to Rainier. Title card: *"Praise Jimothy."* Credits over a rainy skyline.
+- **Tone guardrails:** the villain is the developer, never a real wildlife agency; no dialogue, short captions only; everything skippable with Start.
 
 ---
 

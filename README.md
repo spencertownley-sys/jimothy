@@ -3,7 +3,7 @@
 A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
-**Status:** World 1-1 "Welcome to Ballard" is playable end to end — Boot → Title → Intro → World
+**Status:** World 1-1 "Welcome to Ballard" is playable end to end — Boot → Title → opening story scene → World
 Map → 1-1 (with the storm-drain bonus room) → Level Clear → the 44 bus rides to the next stop on
 the painted Ballard map, with saving. See
 `CLAUDE.md` for the build plan and `docs/` for the design bundle.

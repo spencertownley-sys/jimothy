@@ -48,6 +48,8 @@ const SFX: Record<string, Tone[]> = {
   throw: [{ f: 600, f2: 300, d: 0.08, w: 'square', g: 0.1 }],
   splash: [{ f: 800, f2: 200, d: 0.1, w: 'triangle', g: 0.1 }],
   honk: [{ f: 180, f2: 140, d: 0.3, w: 'sawtooth', g: 0.12 }],
+  chainsaw: [{ f: 110, f2: 140, d: 1.2, w: 'sawtooth', g: 0.08 }],
+  truck: [{ f: 70, f2: 50, d: 2.5, w: 'sawtooth', g: 0.08 }],
   steam: [{ f: 2400, f2: 1800, d: 0.3, w: 'triangle', g: 0.05 }],
 };
 
@@ -93,6 +95,8 @@ const SAMPLE_SFX: Record<string, { file: string; gain: number }> = {
   boing: { file: 'sfx_boing', gain: 0.6 },
   menu_select: { file: 'sfx_menu_select', gain: 0.55 },
   menu_move: { file: 'sfx_menu_move', gain: 0.45 },
+  chainsaw: { file: 'sfx_chainsaw', gain: 0.55 },
+  truck: { file: 'sfx_truck', gain: 0.6 },
 };
 
 interface MusicFile {

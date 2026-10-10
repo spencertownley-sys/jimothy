@@ -32,6 +32,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('bg:title', 'backgrounds/title_keyart.jpg');
     this.load.image('bg:worldmap', 'backgrounds/worldmap.jpg');
     this.load.image('bg:map_ballard', 'backgrounds/map_ballard.jpg');
+    for (const s of ['den', 'porch', 'truck', 'stump']) this.load.image(`story:${s}`, `story/${s}.jpg`);
     for (const lvl of LEVELS) if (lvl.file) this.load.tilemapTiledJSON(`map:${lvl.id}`, `maps/${lvl.file}`);
   }
 

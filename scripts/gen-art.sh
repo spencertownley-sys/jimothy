@@ -219,4 +219,10 @@ uicut $HF/24_btn_pause.jpg $UI/btn_pause.png 112
 convert $HF/25_panel_wood.jpg -resize 360x -quality 80 $UI/panel.jpg
 # World 1 map (Ballard: the neighbourhood, the Locks, Golden Gardens)
 convert $HF/26_map_ballard.jpg -resize '1280x720!' -quality 86 $BG/map_ballard.jpg
+# Opening scene panels (story beats: the den, the porch, the truck, the stump)
+ST=public/assets/story; mkdir -p $ST
+for n in den porch truck stump; do
+  f=$(ls $HF/3?_story_$n.jpg)
+  convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$n.jpg
+done
 echo "art generated"

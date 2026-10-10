@@ -34,3 +34,7 @@ Files here are 2048 px JPEG copies of the originals.
 | 24_btn_pause.jpg | touch controller pause button | 4b19bd1e-ff20-40b6-b318-4a9e5c68722e |
 | 25_panel_wood.jpg | wooden side panels behind the buttons | e427dc7b-1704-44ff-9681-ff7ef0761f13 |
 | 26_map_ballard.jpg | World 1 map (Ballard, the Locks, Golden Gardens) | 296bcb4a-8042-4eb5-b1f7-d80d89b9c710 |
+| 30_story_den.jpg | opening scene: the gaze in their cedar | bc1186f5-88a5-4740-b106-56d31ce11a1a |
+| 31_story_porch.jpg | opening scene: Jimothy stuck under a porch | 0372d1a2-27c4-437a-87ed-960bd4cde902 |
+| 32_story_truck.jpg | opening scene: LUXE crew takes the family | b543f405-2824-405e-b24b-2f31b77ad3bc |
+| 33_story_stump.jpg | opening scene: the stump, the sign, the tracks | 21ee7ebc-1014-487d-99fa-2fcfacb51c89 |
