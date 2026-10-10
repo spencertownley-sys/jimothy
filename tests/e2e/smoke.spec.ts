@@ -41,3 +41,32 @@ test('1-1 loads and Jimothy can run', async ({ page }) => {
   await page.waitForFunction(() => window.__jimothy?.activeScenes().includes('Pause'));
   expect(errors).toEqual([]);
 });
+
+/** 1-2 and 1-3: cutscene plays, skips into the level, Jimothy can move, no console errors. */
+for (const id of ['1-2', '1-3']) {
+  test(`${id} cutscene → level loads and Jimothy can move`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+    page.on('pageerror', (err) => errors.push(err.message));
+
+    await page.goto('/');
+    await page.waitForFunction(() => window.__jimothy?.activeScenes().includes('Title'), null, { timeout: 30_000 });
+    await page.evaluate((lvl) => window.__jimothy?.start('Intro', { story: lvl, then: { scene: 'Game', data: { levelId: lvl } } }), id);
+    await page.waitForFunction(() => window.__jimothy?.activeScenes().includes('Intro'));
+    await page.waitForTimeout(400);
+    await page.keyboard.press('Space'); // skip the cutscene
+    await page.waitForFunction(() => window.__jimothy?.activeScenes().includes('Game'), null, { timeout: 15_000 });
+    expect(await page.evaluate(() => window.__jimothy?.levelId())).toBe(id);
+    await page.waitForTimeout(500);
+    const start = await page.evaluate(() => window.__jimothy?.player());
+    await page.keyboard.down('ArrowRight');
+    await page.waitForTimeout(1500);
+    await page.keyboard.up('ArrowRight');
+    const end = await page.evaluate(() => window.__jimothy?.player());
+    expect(end!.x).toBeGreaterThan(start!.x + 200);
+    expect(end!.fsm).not.toBe('Dead');
+    expect(errors).toEqual([]);
+  });
+}

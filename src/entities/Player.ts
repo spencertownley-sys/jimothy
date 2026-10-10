@@ -31,6 +31,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: 1 | -1 = 1;
   crouching = false;
   onSlime = false;
+  onSand = false;
+  /** hits taken this life (the goose fight's no-damage geoduck reads it) */
+  hitsTaken = 0;
+  /** vertical speed at the end of the last step, before the next collision zeroes it */
+  lastVy = 0;
+  private launchMs = 0;
   inPothole = false;
 
   coyoteMs = 0;
@@ -64,6 +70,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   get grounded(): boolean {
+    // just launched off something we're still touching: we're airborne, not standing
+    if (this.launchMs > 0 && this.body.velocity.y < 0) return false;
     return this.body.blocked.down || this.body.touching.down;
   }
 
@@ -124,7 +132,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     let max = this.crouching && grounded ? CONFIG.CROUCH_WALK_MAX : sprint ? CONFIG.RUN_MAX : CONFIG.WALK_MAX;
     if (this.inPothole && this.power !== 'jacket') max *= CONFIG.POTHOLE_SLOW;
     const accel = grounded ? CONFIG.ACCEL_GROUND : CONFIG.ACCEL_AIR;
-    const friction = grounded ? (this.onSlime ? CONFIG.SLIME_FRICTION : CONFIG.FRICTION) : CONFIG.AIR_DRAG;
+    const friction = grounded ? (this.onSlime ? CONFIG.SLIME_FRICTION : this.onSand ? CONFIG.SAND_FRICTION : CONFIG.FRICTION) : CONFIG.AIR_DRAG;
     let vx = this.body.velocity.x;
     let skidding = false;
     if (dir !== 0) {
@@ -178,6 +186,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private tickTimers(dtMs: number): void {
     if (this.iframesMs > 0) this.iframesMs -= dtMs;
+    if (this.launchMs > 0) this.launchMs -= dtMs;
     if (this.freezeMs > 0) {
       this.freezeMs -= dtMs;
       if (this.freezeMs <= 0) this.freezeMs = 0;
@@ -252,23 +261,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         : this.crouching ? CONFIG.HITBOX.crouchBig : CONFIG.HITBOX.big;
     const fw = this.frame.realWidth;
     const fh = this.frame.realHeight;
-    // Keep feet anchored: origin is (0.5, 1) so only the top of the box moves.
-    this.body.setSize(box.w, box.h, false);
-    this.body.setOffset((fw - box.w) / 2, fh - box.h);
-    // Re-anchor now: physics catch-up sub-steps skip preUpdate, so a body that grew while keeping
-    // its old top-left would start the next sub-step sunk into the floor and fall through it.
-    // Shift the previous-position records by the same amount, or Body.postUpdate would read the
-    // re-anchor as motion and move the sprite with it.
     const b = this.body;
-    const ox = b.position.x;
-    const oy = b.position.y;
-    b.updateFromGameObject();
-    const dx = b.position.x - ox;
-    const dy = b.position.y - oy;
+    // Keep feet anchored: origin is (0.5, 1) so only the top of the box moves.
+    const feet = b.bottom;
+    const cx = b.center.x;
+    b.setSize(box.w, box.h, false);
+    b.setOffset((fw - box.w) / 2, fh - box.h);
+    // Re-anchor now, from the body's own feet. Physics catch-up sub-steps skip preUpdate, so a
+    // body that grew while keeping its old top-left would start the next sub-step sunk into the
+    // floor. (Rebuilding it from the sprite instead is wrong mid-frame: the sprite only catches up
+    // with the body after the last sub-step, so the box would jump back to where he was at the
+    // start of the frame — enough to slip through a moving platform.) Shift the previous-position
+    // records by the same amount, or Body.postUpdate would read the re-anchor as motion.
+    const dx = cx - b.width / 2 - b.position.x;
+    const dy = feet - b.height - b.position.y;
+    b.position.x += dx;
+    b.position.y += dy;
     b.prev.x += dx;
     b.prev.y += dy;
     b.prevFrame.x += dx;
     b.prevFrame.y += dy;
+    b.updateCenter();
   }
 
   private updateVisuals(dtMs: number): void {
@@ -287,8 +300,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Stomp bounce. Hold jump during the bounce for a higher one. */
   bounce(held: boolean): void {
-    const vy = held ? CONFIG.STOMP_BOUNCE_HELD : CONFIG.STOMP_BOUNCE;
+    this.launch(held ? CONFIG.STOMP_BOUNCE_HELD : CONFIG.STOMP_BOUNCE, held);
+  }
+
+  /** Thrown upward by something else (stomp, see-saw). Holding jump keeps the floaty rise. */
+  launch(vy: number, held: boolean): void {
     this.body.setVelocityY(vy);
+    this.launchMs = 80;
     this.jump = { vy, holdMs: CONFIG.JUMP_HOLD_MS, jumping: true, cut: !held };
     this.coyoteMs = 0;
   }
@@ -297,6 +315,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   hurt(): boolean {
     if (this.invulnerable || this.fsm === 'Dead' || this.fsm === 'Victory' || this.freezeMs > 0) return false;
     const next = powerAfterHit(this.power);
+    this.hitsTaken += 1;
     if (next === 'dead') {
       this.die();
       return true;
@@ -397,6 +416,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   debugInfo(): string {
     const v = this.body.velocity;
     const b = this.body;
-    return `${this.fsm} ${this.power} vx=${v.x.toFixed(0)} vy=${v.y.toFixed(0)} grounded=${this.lastGrounded} coyote=${Math.max(0, this.coyoteMs).toFixed(0)} buffer=${Math.max(0, this.bufferMs).toFixed(0)} crouch=${this.crouching} slime=${this.onSlime} pothole=${this.inPothole} frame=${this.frame.name} body=${b.x.toFixed(0)},${b.y.toFixed(0)} ${b.width}x${b.height} off=${b.offset.x},${b.offset.y}`;
+    return `${this.fsm} ${this.power} vx=${v.x.toFixed(0)} vy=${v.y.toFixed(0)} grounded=${this.lastGrounded} coyote=${Math.max(0, this.coyoteMs).toFixed(0)} buffer=${Math.max(0, this.bufferMs).toFixed(0)} crouch=${this.crouching} slime=${this.onSlime} sand=${this.onSand} pothole=${this.inPothole} frame=${this.frame.name} body=${b.x.toFixed(0)},${b.y.toFixed(0)} ${b.width}x${b.height} off=${b.offset.x},${b.offset.y}`;
   }
 }

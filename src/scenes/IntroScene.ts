@@ -2,69 +2,24 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
 import { getInput } from '../core/input';
+import { STORIES, type StoryBeat } from '../data/stories';
 import { COLORS, FONT_BODY, uiText } from '../ui/text';
 
-interface Beat {
-  /** texture key of the painted panel */
-  image: string;
-  caption: string;
-  /** slow Ken Burns move: from/to scale and the point the camera drifts toward (0..1) */
-  zoom: [number, number];
-  focus: { x: number; y: number };
-  sfx?: { name: string; at: number }[];
-  holdMs: number;
+export interface StorySceneData {
+  /** key into STORIES; defaults to the opening */
+  story?: string;
+  /** where to go afterwards (default: the world map) */
+  then?: { scene: string; data?: object };
 }
 
-// The opening: Jimothy loses his gaze (a group of raccoons is a "gaze") while stuck under a
-// porch, and the LUXE MICRO-LOFTS crew trucks them off. Panels are Higgsfield paintings
-// (art/higgsfield/30-33); the last beat reuses the Ballard map and drifts toward the Locks,
-// where the tire tracks lead and 1-1 begins.
-const BEATS: Beat[] = [
-  {
-    image: 'story:den',
-    caption: 'Ballard. One mossy cedar, one gaze of raccoons…\nand Jimothy, squished at the end.',
-    zoom: [1.0, 1.08],
-    focus: { x: 0.6, y: 0.45 },
-    holdMs: 5600,
-  },
-  {
-    image: 'story:porch',
-    caption: 'One rainy night the gaze went out foraging.\nJimothy got stuck under a porch. Again.',
-    zoom: [1.06, 1.0],
-    focus: { x: 0.7, y: 0.6 },
-    holdMs: 5600,
-  },
-  {
-    image: 'story:truck',
-    caption: 'By the time he wriggled free, LUXE MICRO-LOFTS\nhad taken the cedar… and his whole family.',
-    zoom: [1.0, 1.1],
-    focus: { x: 0.45, y: 0.5 },
-    sfx: [
-      { name: 'chainsaw', at: 0 },
-      { name: 'truck', at: 3000 },
-    ],
-    holdMs: 6200,
-  },
-  {
-    image: 'story:stump',
-    caption: "All that was left: a stump, a sign,\nand a tuft of Mom's tail.",
-    zoom: [1.08, 1.0],
-    focus: { x: 0.72, y: 0.6 },
-    holdMs: 5600,
-  },
-  {
-    image: 'bg:map_ballard',
-    caption: "The smallest, slowest, least likely hero in Seattle.\nAlso the only one left. Follow the tracks. Find the gaze.",
-    zoom: [1.0, 1.35],
-    focus: { x: 0.28, y: 0.62 },
-    holdMs: 6400,
-  },
-];
 
 const FADE_MS = 550;
 const TYPE_MS_PER_CHAR = 28;
 
-/** Opening story scene: ~30 s, A / tap advances a panel, Start skips it all. */
+/**
+ * Story cutscenes: the ~30 s opening, the short scenes before 1-2 and 1-3 and the World 1
+ * postcard. A / tap advances a panel, Start skips it all.
+ */
 export class IntroScene extends Phaser.Scene {
   private index = -1;
   private elapsed = 0;
@@ -81,7 +36,13 @@ export class IntroScene extends Phaser.Scene {
     super({ key: 'Intro' });
   }
 
-  create(): void {
+  private beats: StoryBeat[] = [];
+  private then: { scene: string; data?: object } = { scene: 'WorldMap' };
+
+  create(data?: StorySceneData): void {
+    const story = STORIES[data?.story ?? 'opening'] ?? STORIES.opening;
+    this.beats = story.beats;
+    this.then = data?.then ?? { scene: 'WorldMap' };
     const W = CONFIG.WIDTH;
     const H = CONFIG.HEIGHT;
     this.index = -1;
@@ -105,9 +66,10 @@ export class IntroScene extends Phaser.Scene {
       .setDepth(11);
     uiText(this, W - 22, 22, 'A next  ·  START skip', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(1, 0).setDepth(12);
     // dots: which panel we're on
-    this.dots = BEATS.map((_, i) => this.add.circle(W / 2 - (BEATS.length - 1) * 11 + i * 22, H - 14, 5, 0xf4efe6, 0.3).setDepth(12));
+    this.dots = this.beats.map((_, i) => this.add.circle(W / 2 - (this.beats.length - 1) * 11 + i * 22, H - 14, 5, 0xf4efe6, 0.3).setDepth(12));
     this.input.on('pointerdown', () => (this.tapped = true));
-    AudioManager.music('title');
+    this.dots.forEach((d) => d.setVisible(this.beats.length > 1));
+    AudioManager.music(story.music);
     this.next();
   }
 
@@ -117,18 +79,18 @@ export class IntroScene extends Phaser.Scene {
     this.index++;
     for (const t of this.sfxTimers) t.remove(false);
     this.sfxTimers = [];
-    if (this.index >= BEATS.length) {
+    if (this.index >= this.beats.length) {
       this.finish();
       return;
     }
-    const beat = BEATS[this.index];
+    const beat = this.beats[this.index];
     const W = CONFIG.WIDTH;
     const H = CONFIG.HEIGHT;
     const prev = this.image;
     if (prev) this.tweens.add({ targets: prev, alpha: 0, duration: FADE_MS, onComplete: () => prev.destroy() });
 
     const key = this.textures.exists(beat.image) ? beat.image : 'bg:title';
-    const img = this.add.image(W / 2, H / 2, key).setAlpha(0).setDepth(1);
+    const img = this.add.image(W / 2, H / 2, key).setAlpha(0).setDepth(1 + this.index);
     const cover = Math.max(W / img.width, H / img.height);
     const [z0, z1] = beat.zoom;
     // Ken Burns: scale and drift toward the beat's focus point over the hold time
@@ -157,7 +119,7 @@ export class IntroScene extends Phaser.Scene {
     this.leaving = true;
     for (const t of this.sfxTimers) t.remove(false);
     this.cameras.main.fadeOut(500, 0, 0, 0);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('WorldMap'));
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start(this.then.scene, this.then.data));
   }
 
   override update(_t: number, delta: number): void {
@@ -182,6 +144,6 @@ export class IntroScene extends Phaser.Scene {
       this.typed = Math.min(this.fullText.length, Math.floor(this.elapsed / TYPE_MS_PER_CHAR));
     }
     if (this.caption.text.length !== this.typed) this.caption.setText(this.fullText.slice(0, this.typed));
-    if (this.elapsed >= BEATS[this.index].holdMs) this.next();
+    if (this.elapsed >= this.beats[this.index].holdMs) this.next();
   }
 }

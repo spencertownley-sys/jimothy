@@ -15,6 +15,8 @@ export const CONFIG = {
   FRICTION: 2400,
   AIR_DRAG: 300,
   SLIME_FRICTION: 400,
+  // Golden Gardens sand: a touch slidier than pavement, nowhere near slime
+  SAND_FRICTION: 1300,
   MAX_FALL_SPEED: 1100,
 
   JUMP_VELOCITY: -760,
@@ -64,7 +66,18 @@ export const CONFIG = {
   MUSIC_CROSSFADE_MS: 600,
   TILE_BIAS: 24,
 
+  // 1-2 / 1-3 mechanisms (docs/03_LEVEL_SPECS.md)
+  SALMON: { UNDER_MS: 1100, RISE_MS: 320, HOLD_MS: 1200, FALL_MS: 380, WARN_MS: 350 },
+  LOCKGATE: { UP_MS: 2400, MOVE_MS: 1100, DOWN_MS: 2400 },
+  SEESAW: { LAUNCH_VY: -1100, SOFT_VY: -820, MIN_LAND_VY: 180, TILT_DEG: 11 },
+  BONFIRE_KNOCKBACK: 360,
+  SLIME: { DROP_EVERY_PX: 40, LIFE_MS: 9000, MAX: 40 },
+  SHELL_KICK_GRACE_MS: 220,
+  WATER_SINK_PX: 14,
+  CAMERA_FLASH_MS: 650,
+
   EXIT_BUS_MS: 1400,
+  EXIT_BOAT_MS: 2200,
   IDLE_LOOK_MS: 8000,
   DEBUG_KEY: 'Backquote',
 } as const;

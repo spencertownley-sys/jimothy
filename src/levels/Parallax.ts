@@ -11,6 +11,8 @@ interface ParallaxSet {
 const SETS: Record<string, ParallaxSet> = {
   ballard: { sky: 0x6e9aa6, far: 'bg:ballard_far', mid: 'bg:ballard_mid', near: 'bg:ballard_near' },
   drain: { sky: 0x101c1a },
+  locks: { sky: 0x8fb1b4, far: 'bg:locks_far', mid: 'bg:locks_mid', near: 'bg:ballard_near' },
+  beach: { sky: 0xd99a86, far: 'bg:beach_far', mid: 'bg:beach_mid' },
 };
 
 interface Layer {

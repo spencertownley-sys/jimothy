@@ -225,4 +225,96 @@ for n in den porch truck stump; do
   f=$(ls $HF/3?_story_$n.jpg)
   convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$n.jpg
 done
+
+# ======================================================================================
+# 1-2 "The Locks" and 1-3 "Golden Gardens at Dusk" (art/higgsfield 40-66)
+# ======================================================================================
+# ---- Enemies: crow (walk / shell / flying with a geoduck), Canada Goose boss poses --------
+cutfill $HF/46_crow_sheet.jpg 649x467+1311+382 $OUT/enemies/crow_walk.png -resize x48
+cutfill $HF/46_crow_sheet.jpg 465x460+117+358  $OUT/enemies/crow_shell.png -resize x40
+cutfill $HF/46_crow_sheet.jpg 665x768+641+144  $OUT/enemies/crow_fly.png -resize x84
+G=$HF/57_goose_sheet.jpg
+cutfill $G 303x543+96+300   $OUT/enemies/goose_honk.png   -resize x124
+cutfill $G 618x344+464+498  $OUT/enemies/goose_charge.png -resize x82
+cutfill $G 466x536+1065+275 $OUT/enemies/goose_flap.png   -resize x118
+cutfill $G 342x357+1608+491 $OUT/enemies/goose_stun.png   -resize x86
+cutfill $HF/66_cart_logpile.jpg 721x742+158+209 $OUT/enemies/cart_run.png -resize x66
+# ---- Mechanism sprites (blocks atlas) -----------------------------------------------------
+cutfill $HF/44_lock_gate.jpg 523x1457+313+304 $OUT/blocks/lockgate.png -resize '96x264!'
+cutfill $HF/45_salmon.jpg 1373x644+296+253 $OUT/blocks/salmon.png -resize 132x
+cutfill $HF/53_seesaw.jpg 1498x232+285+170 $OUT/blocks/seesaw_log.png -resize 300x
+cutfill $HF/53_seesaw.jpg 420x300+720+470 $OUT/blocks/seesaw_rock.png -resize x70
+cutfill $HF/54_bonfire.jpg 1414x1229+317+505 $OUT/blocks/bonfire.png -resize x84
+cutfill $HF/48_lock_boat.jpg 980x353+491+259 $OUT/blocks/boat.png -resize x120
+cutfill $HF/56_kayak.jpg 1634x280+222+305 $OUT/blocks/kayak.png -resize 220x
+cutfill $HF/49_locks_props.jpg 427x179+66+555 $OUT/blocks/slime.png -resize '96x26!'
+cutfill $HF/66_cart_logpile.jpg 888x581+1038+331 $OUT/blocks/logpile.png -resize x96
+# ---- Props ----------------------------------------------------------------------------------
+cutfill $HF/47_sea_lion.jpg 1407x803+376+181 $OUT/props/sealion.png -resize x150
+L=$HF/49_locks_props.jpg
+cutfill $L 257x338+543+407  $OUT/props/bollard.png   -resize x56
+cutfill $L 370x244+860+518  $OUT/props/rope.png      -resize x36
+cutfill $L 295x401+1279+350 $OUT/props/lifering.png  -resize x80
+cutfill $L 283x378+1662+365 $OUT/props/fishwindow.png -resize x96
+cutfill $HF/55_bathhouse.jpg 1605x760+222+198 $OUT/props/bathhouse.png -resize x300
+BP=$HF/58_beach_props.jpg
+cutfill $BP 350x406+49+320   $OUT/props/dunegrass.png  -resize x70
+cutfill $BP 569x364+434+393  $OUT/props/picnic.png     -resize x72
+cutfill $BP 310x319+1004+432 $OUT/props/driftstump.png -resize x60
+cutfill $BP 247x359+1333+366 $OUT/props/beachsign.png  -resize x84
+cutfill $BP 401x310+1604+427 $OUT/props/stones.png     -resize x52
+# ---- Tilesets: locks (concrete lock wall + dock) and beach (sand + driftwood) ---------------
+# Same grid as ballard (8 columns, 48 px, 1 px extrusion). 16 tiles each:
+#   1-4 surface top · 5-8 body · 9-10 one-way platform · 11-14 deep body · 15 hazard-free blank · 16 blank
+tileset() { # tileset <name> <surface-src> <platform-src> <platform-geo> [rows of sky to drop]
+  local name="$1" surf="$2" plat="$3" pgeo="$4" D=$TMP/ts_$1
+  mkdir -p $D
+  convert "$surf" -crop "2048x$((869-${5:-0}))+0+${5:-0}" +repage -resize x192 -crop 96x192+60+0 +repage $TMP/surf96.png
+  mirror $TMP/surf96.png $TMP/surf.png
+  for i in 0 1 2 3; do
+    crop48 $TMP/surf.png $((i*48)) 0 $D/$(printf '%02d' $((1+i))).png
+    crop48 $TMP/surf.png $((i*48)) 48 $D/$(printf '%02d' $((5+i))).png
+    crop48 $TMP/surf.png $((i*48)) 96 $D/$(printf '%02d' $((11+i))).png
+  done
+  convert "$plat" -crop "$pgeo" +repage -resize 'x48!' $TMP/plat_c.png
+  convert $TMP/plat_c.png -crop 48x48+90+0 +repage $TMP/plat48.png
+  mirror $TMP/plat48.png $TMP/plat.png
+  crop48 $TMP/plat.png 0 0 $D/09.png
+  crop48 $TMP/plat.png 48 0 $D/10.png
+  convert -size 48x48 xc:none $D/15.png
+  convert -size 48x48 xc:none $D/16.png
+  for f in $D/[0-9][0-9].png; do
+    convert "$f" -set option:distort:viewport 50x50-1-1 -virtual-pixel edge -distort SRT 0 +repage "$f"
+  done
+  montage $D/[0-9][0-9].png -tile 8x -geometry 50x50+1+1 -background none -depth 8 public/assets/tilesets/$name.png
+  identify public/assets/tilesets/$name.png
+}
+tileset locks $HF/42_concrete_tex.jpg $HF/64_dock_planks.jpg 1600x230+200+350
+tileset beach $HF/52_sand_tex.jpg $HF/65_driftwood_platform.jpg 1300x210+640+275 118
+# ---- Water (a tiling strip drawn in front of Jimothy over canals and the Sound) ------------
+convert $HF/43_water_tex.jpg -resize x300 -crop 384x200+0+36 +repage $TMP/water.png
+mirror $TMP/water.png $TMP/water2.png
+convert $TMP/water2.png -depth 8 $BG/water.png
+convert $TMP/water2.png -modulate 105,90,330 -fill '#ff9a5a' -colorize 18% -depth 8 $BG/water_dusk.png
+# ---- Parallax --------------------------------------------------------------------------
+convert $HF/40_locks_far.jpg -resize x720 $TMP/lf.png; mirror $TMP/lf.png $TMP/lf2.png
+convert $TMP/lf2.png -quality 84 $BG/bg_locks_far.jpg
+convert $HF/41_locks_mid.jpg -alpha set -fuzz 7% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -draw "matte 2,866 floodfill" -draw "matte 2045,866 floodfill" \
+  -trim +repage -resize x400 $TMP/lm.png
+mirror $TMP/lm.png $BG/bg_locks_mid.png
+convert $HF/50_dusk_far.jpg -resize x720 $TMP/df.png; mirror $TMP/df.png $TMP/df2.png
+convert $TMP/df2.png -quality 84 $BG/bg_beach_far.jpg
+# the grey shows through the branches too, so key it out everywhere (not just a flood fill)
+convert $HF/51_dunes_mid.jpg -crop 2048x800+0+0 +repage $TMP/dm_c.png
+dbg=$(convert $TMP/dm_c.png -format '%[pixel:p{2040,5}]' info:)
+convert $TMP/dm_c.png -alpha set -fuzz 9% -transparent "$dbg" $TMP/dm_k.png
+convert $TMP/dm_k.png -trim +repage -resize x380 $TMP/dm.png
+mirror $TMP/dm.png $BG/bg_beach_mid.png
+# ---- Story panels: 1-2 and 1-3 cutscenes, World 1 postcard ---------------------------------
+for pair in 60:locks_truck 61:herschel 62:goose_gang 63:postcard_w1; do
+  n=${pair%%:*}; name=${pair#*:}
+  f=$(ls $HF/${n}_*.jpg)
+  convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$name.jpg
+done
 echo "art generated"

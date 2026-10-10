@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
 import { getInput } from '../core/input';
+import { levelById } from '../levels/LevelDef';
 import { COLORS, uiText } from '../ui/text';
 
 export interface LevelClearData {
@@ -86,7 +87,11 @@ export class LevelClearScene extends Phaser.Scene {
     if (!this.ready) return;
     if (this.input_.justPressed('start') || this.input_.justPressed('a')) {
       // ride the bus from the level just cleared to the next stop on the map
-      this.scene.start('WorldMap', { focus: this.data_.next ?? this.data_.levelId, from: this.data_.levelId });
+      const map = { scene: 'WorldMap', data: { focus: this.data_.next ?? this.data_.levelId, from: this.data_.levelId } };
+      // end of a world: its postcard first
+      const postcard = levelById(this.data_.levelId)?.postcard;
+      if (postcard) this.scene.start('Intro', { story: postcard, then: map });
+      else this.scene.start(map.scene, map.data);
     }
   }
 }

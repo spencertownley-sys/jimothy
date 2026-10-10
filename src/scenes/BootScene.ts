@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { ensurePlaceholders } from '../core/placeholders';
+import { STORY_IMAGES } from '../data/stories';
 import { LEVELS } from '../levels/LevelDef';
 import { COLORS, uiText } from '../ui/text';
 
@@ -25,14 +26,20 @@ export class BootScene extends Phaser.Scene {
 
     this.load.setPath('assets');
     for (const a of ATLASES) this.load.atlas(a, `atlases/${a}.png`, `atlases/${a}.json`);
-    this.load.image('tiles:ballard', 'tilesets/ballard.png');
+    for (const t of ['ballard', 'locks', 'beach']) this.load.image(`tiles:${t}`, `tilesets/${t}.png`);
     this.load.image('bg:ballard_far', 'backgrounds/bg_ballard_far.jpg');
     this.load.image('bg:ballard_mid', 'backgrounds/bg_ballard_mid.png');
     this.load.image('bg:ballard_near', 'backgrounds/bg_ballard_near.png');
+    this.load.image('bg:locks_far', 'backgrounds/bg_locks_far.jpg');
+    this.load.image('bg:locks_mid', 'backgrounds/bg_locks_mid.png');
+    this.load.image('bg:beach_far', 'backgrounds/bg_beach_far.jpg');
+    this.load.image('bg:beach_mid', 'backgrounds/bg_beach_mid.png');
+    this.load.image('bg:water', 'backgrounds/water.png');
+    this.load.image('bg:water_dusk', 'backgrounds/water_dusk.png');
     this.load.image('bg:title', 'backgrounds/title_keyart.jpg');
     this.load.image('bg:worldmap', 'backgrounds/worldmap.jpg');
     this.load.image('bg:map_ballard', 'backgrounds/map_ballard.jpg');
-    for (const s of ['den', 'porch', 'truck', 'stump']) this.load.image(`story:${s}`, `story/${s}.jpg`);
+    for (const s of STORY_IMAGES) this.load.image(`story:${s}`, `story/${s}.jpg`);
     for (const lvl of LEVELS) if (lvl.file) this.load.tilemapTiledJSON(`map:${lvl.id}`, `maps/${lvl.file}`);
   }
 

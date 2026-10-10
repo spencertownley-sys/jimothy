@@ -10,10 +10,12 @@ import { getProp, objectRect, objectType, type TiledObjectLike } from '../core/t
 import { heartsFor, resolveBlockItem, type PowerUpKind } from '../data/powerups';
 import { Brick } from '../entities/blocks/Brick';
 import { Checkpoint } from '../entities/blocks/Checkpoint';
+import { Mover, type MoverLeg } from '../entities/blocks/Mover';
 import { QuestionBlock, type BlockHost } from '../entities/blocks/QuestionBlock';
 import { spawnProp } from '../entities/blocks/Prop';
+import { SeeSaw } from '../entities/blocks/SeeSaw';
 import { Sign } from '../entities/blocks/Sign';
-import { Enemy, spawnEnemy, type EnemyContext } from '../entities/enemies';
+import { CanadaGoose, Enemy, spawnEnemy, type EnemyContext } from '../entities/enemies';
 import { Geoduck } from '../entities/items/Geoduck';
 import { Latte } from '../entities/items/Latte';
 import { PowerUp } from '../entities/items/PowerUp';
@@ -34,6 +36,31 @@ interface Zone {
   rect: Phaser.Geom.Rectangle;
   obj: TiledObjectLike;
 }
+
+interface Water {
+  rect: Phaser.Geom.Rectangle;
+}
+
+interface Slime {
+  img: Phaser.GameObjects.Image;
+  x: number;
+  y: number;
+  bornMs: number;
+}
+
+/** The 1-3 goose arena: walls close behind you, open when the goose flies off. */
+interface Arena {
+  rect: Phaser.Geom.Rectangle;
+  engaged: boolean;
+  done: boolean;
+  hitsAtStart: number;
+  walls: Phaser.GameObjects.GameObject[];
+  boss?: CanadaGoose;
+}
+
+const easeOut = (t: number): number => 1 - (1 - t) * (1 - t);
+const easeIn = (t: number): number => t * t;
+const easeInOut = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
   private def!: LevelDef;
@@ -75,6 +102,17 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
   private blocks!: Phaser.Physics.Arcade.StaticGroup;
   private checkpoints!: Phaser.Physics.Arcade.StaticGroup;
   private zones: Zone[] = [];
+  private movers: Mover[] = [];
+  private gates: Mover[] = [];
+  private moverGroup!: Phaser.Physics.Arcade.Group;
+  private seesaws: SeeSaw[] = [];
+  private bonfires!: Phaser.Physics.Arcade.StaticGroup;
+  private walls!: Phaser.Physics.Arcade.StaticGroup;
+  private waters: Water[] = [];
+  private slimes: Slime[] = [];
+  private arena?: Arena;
+  private flashZones: { rect: Phaser.Geom.Rectangle; cooldownMs: number }[] = [];
+  private exitVehicle?: Phaser.GameObjects.Image;
   private input_ = getInput().state;
   private timeMs = 0;
   private ending = false;
@@ -97,6 +135,14 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     this.ending = false;
     this.timeMs = 0;
     this.zones = [];
+    this.movers = [];
+    this.gates = [];
+    this.seesaws = [];
+    this.waters = [];
+    this.slimes = [];
+    this.arena = undefined;
+    this.flashZones = [];
+    this.exitVehicle = undefined;
     this.input_.reset();
     this.run = (this.registry.get(RUN_KEY) as RunState | undefined) ?? newRun(def.id);
     this.run.levelId = def.id;
@@ -115,6 +161,9 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     this.bits = this.physics.add.group();
     this.blocks = this.physics.add.staticGroup();
     this.checkpoints = this.physics.add.staticGroup();
+    this.moverGroup = this.physics.add.group({ allowGravity: false, immovable: true });
+    this.bonfires = this.physics.add.staticGroup();
+    this.walls = this.physics.add.staticGroup();
 
     // spawn point: explicit (drains) → checkpoint for this level → start
     let spawnName = data.spawn ?? 'start';
@@ -129,10 +178,16 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
 
     const g = this.level.ground;
     const ow = this.level.oneway;
-    const solids: (Phaser.Tilemaps.TilemapLayer | Phaser.Physics.Arcade.StaticGroup)[] = [g, this.blocks];
+    const solids: (Phaser.Tilemaps.TilemapLayer | Phaser.Physics.Arcade.StaticGroup | Phaser.Physics.Arcade.Group)[] = [g, this.blocks, this.walls, this.moverGroup];
     if (ow) solids.push(ow);
     this.physics.add.collider(this.player, g);
     if (ow) this.physics.add.collider(this.player, ow);
+    this.physics.add.collider(this.player, this.moverGroup);
+    this.physics.add.collider(this.player, this.walls);
+    for (const ss of this.seesaws) {
+      this.physics.add.collider(this.player, ss, () => ss.land(this.player, this.input_.get('jump')));
+    }
+    this.physics.add.overlap(this.player, this.bonfires, (_p, f) => this.touchBonfire(f as Phaser.Physics.Arcade.Image));
     this.physics.add.collider(this.player, this.blocks, (_p, b) => this.onBlockTouch(b as QuestionBlock | Brick));
     for (const s of solids) {
       this.physics.add.collider(this.enemies, s);
@@ -200,7 +255,32 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
           break;
         }
         case 'qblock':
-          this.blocks.add(new QuestionBlock(this, r.centerX, r.centerY, getProp(obj, 'item', 'latte')));
+          this.blocks.add(new QuestionBlock(this, r.centerX, r.centerY, getProp(obj, 'item', 'latte'), getProp(obj, 'hidden', false)));
+          break;
+        case 'water':
+          this.spawnWater(r.x, r.y, r.width, r.height, getProp(obj, 'style', 'canal'));
+          break;
+        case 'salmon':
+          this.spawnSalmon(r.centerX, r.y, r.bottom, getProp(obj, 'phase', 0), getProp(obj, 'dir', 1));
+          break;
+        case 'lockgate':
+          this.spawnLockGate(r.centerX, r.y, r.width, r.height, getProp(obj, 'travel', 7), getProp(obj, 'phase', 0));
+          break;
+        case 'seesaw':
+          this.seesaws.push(new SeeSaw(this, r.centerX, r.bottom, r.width, getProp(obj, 'tilt', -1) < 0 ? -1 : 1));
+          break;
+        case 'bonfire': {
+          const f = this.bonfires.create(r.centerX, r.bottom, 'blocks', 'bonfire') as Phaser.Physics.Arcade.Image;
+          f.setOrigin(0.5, 1).setDepth(6).refreshBody();
+          (f.body as Phaser.Physics.Arcade.StaticBody).setSize(56, 40, false).setOffset((f.width - 56) / 2, f.height - 40);
+          this.tweens.add({ targets: f, scaleY: 1.06, scaleX: 0.97, duration: 260, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+          break;
+        }
+        case 'arena':
+          this.arena = { rect: new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), engaged: false, done: false, hitsAtStart: 0, walls: [] };
+          break;
+        case 'flashzone':
+          this.flashZones.push({ rect: new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), cooldownMs: 0 });
           break;
         case 'brick':
           this.blocks.add(new Brick(this, r.centerX, r.centerY));
@@ -214,9 +294,17 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
         case 'drain':
           this.zones.push({ kind: 'drain', rect: new Phaser.Geom.Rectangle(r.x, r.y - 6, r.width, r.height + 6), obj });
           break;
-        case 'exit':
+        case 'exit': {
           this.zones.push({ kind: 'exit', rect: new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), obj });
+          const vehicle = getProp(obj, 'vehicle', 'bus');
+          if (vehicle !== 'bus' && this.textures.get('blocks').has(vehicle)) {
+            // the boat / kayak waits at the water's edge; its hull sits a little under the surface
+            const v = this.add.image(r.centerX, r.bottom + (vehicle === 'boat' ? 34 : 18), 'blocks', vehicle).setOrigin(0.5, 1).setDepth(11);
+            this.tweens.add({ targets: v, y: v.y + 5, angle: 1.2, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+            this.exitVehicle = v;
+          }
           break;
+        }
         case 'prop':
           spawnProp(this, obj);
           break;
@@ -224,6 +312,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
           break;
         default:
           console.warn(`[level] unsupported object type "${type}" at ${r.x},${r.y}`);
+      }
+    }
+    // the goose waits in its arena
+    if (this.arena) {
+      for (const e of this.enemies.getChildren() as Enemy[]) {
+        if (e instanceof CanadaGoose && Phaser.Geom.Rectangle.Contains(this.arena.rect, e.x, e.y - 10)) this.arena.boss = e;
       }
     }
     // the checkpoint he already touched stays lit
@@ -260,22 +354,22 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
       this.player.inPothole = t?.properties?.hazard === 'pothole';
     } else this.player.inPothole = false;
 
+    this.updateSurfaces();
     this.player.fixedUpdate(this.input_, dtMs);
     if (this.player.fsm !== 'Dead' && this.player.body.top > this.level.heightPx + 40) this.player.die();
 
-    const ctx: EnemyContext = {
-      player: this.player,
-      cameraCenterX: this.cameras.main.midPoint.x,
-      worldHeight: this.level.heightPx,
-      dtMs,
-      solidAt: (x, y) => this.solidAt(x, y),
-      puff: (x, y) => this.puff(x, y),
-    };
+    const ctx = this.enemyContext(dtMs);
     for (const e of this.enemies.getChildren() as Enemy[]) e.fixedUpdate(ctx);
+    this.updateMovers(dtMs);
+    for (const ss of this.seesaws) ss.fixedUpdate(dtMs);
+    this.updateWater();
+    this.updateArena();
+    this.updateFlashes(dtMs);
     for (const u of this.powerups.getChildren() as PowerUp[]) u.fixedUpdate();
     for (const d of this.raindrops.getChildren() as RainDrop[]) d.fixedUpdate(dtMs);
 
     if (this.player.fsm !== 'Dead') this.checkZones();
+    this.player.lastVy = this.player.body.velocity.y;
 
     // Phaser only resets blocked/touching in the first sub-step of a frame. Without this, catch-up
     // sub-steps on a slow frame skip tile separation and bodies sink through floors.
@@ -307,6 +401,251 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     if (this.debugText) {
       this.debugText.setVisible(this.debugOn);
       if (this.debugOn) this.debugText.setText(`${this.player.debugInfo()} | ${this.def.id} t=${(this.timeMs / 1000).toFixed(1)}s bodies=${this.physics.world.bodies.size}`);
+    }
+  }
+
+
+  // --- 1-2 / 1-3 mechanisms ------------------------------------------------------------------
+
+  private enemyContext(dtMs: number): EnemyContext {
+    return {
+      player: this.player,
+      cameraCenterX: this.cameras.main.midPoint.x,
+      worldHeight: this.level.heightPx,
+      dtMs,
+      solidAt: (x, y) => this.solidAt(x, y),
+      puff: (x, y) => this.puff(x, y),
+      others: () => this.enemies.getChildren() as Enemy[],
+      slime: (x, y) => this.dropSlime(x, y),
+      dropGeoduck: (index, x, y) => {
+        if (!this.run.geoducksFound[index]) this.geoducks.add(new Geoduck(this, x, y, index));
+      },
+      bossDefeated: (boss) => this.bossDefeated(boss),
+      shake: (ms, intensity) => {
+        if (!Save.get().options.reduceMotion) this.cameras.main.shake(ms, intensity);
+      },
+    };
+  }
+
+  /** Canal / Sound water: drawn in front of Jimothy, deadly below the foam line. */
+  private spawnWater(x: number, y: number, w: number, h: number, style: string): void {
+    const key = style === 'dusk' ? 'bg:water_dusk' : 'bg:water';
+    if (this.textures.exists(key)) {
+      const ts = this.add.tileSprite(x, y, w, Math.max(h, 64), key).setOrigin(0, 0).setDepth(12).setAlpha(0.94);
+      ts.tilePositionX = x * 0.5;
+      this.tweens.add({ targets: ts, y: y + 4, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    }
+    this.waters.push({ rect: new Phaser.Geom.Rectangle(x, y, w, h) });
+  }
+
+  private waterAt(x: number): Water | undefined {
+    return this.waters.find((wt) => x >= wt.rect.left && x <= wt.rect.right);
+  }
+
+  private splash(x: number, y: number): void {
+    AudioManager.sfx('splash');
+    for (const dx of [-18, 0, 18]) {
+      const d = this.add.image(x + dx, y, 'blocks', 'raindrop').setDepth(13).setScale(1.4);
+      this.tweens.add({ targets: d, y: y - 50 - Math.abs(dx), x: x + dx * 2.5, alpha: 0, duration: 420, ease: 'Quad.out', onComplete: () => d.destroy() });
+    }
+  }
+
+  /** Leaping salmon: hides under the water, leaps, holds 1.2 s as a platform, drops back. */
+  private spawnSalmon(x: number, top: number, rest: number, phaseMs: number, dir: number): void {
+    const S = CONFIG.SALMON;
+    const legs: MoverLeg[] = [
+      { to: 0, ms: S.UNDER_MS },
+      { to: 1, ms: S.RISE_MS, ease: easeOut },
+      { to: 1, ms: S.HOLD_MS },
+      { to: 0, ms: S.FALL_MS, ease: easeIn },
+    ];
+    const fish = new Mover(this, x, top - 14, rest, 'salmon', legs, phaseMs);
+    fish.setDepth(7).setFlipX(dir < 0);
+    this.moverGroup.add(fish);
+    fish.body.setImmovable(true);
+    fish.body.setAllowGravity(false);
+    fish.body.setSize(108, 20, false).setOffset((fish.width - 108) / 2, 14);
+    fish.body.checkCollision.down = false;
+    fish.body.checkCollision.left = false;
+    fish.body.checkCollision.right = false;
+    fish.onLeg = (_leg, i) => {
+      const surface = this.waterAt(x)?.rect.y ?? rest;
+      const near = Math.abs(x - this.cameras.main.midPoint.x) < CONFIG.WIDTH;
+      if (i === 1 && near) this.splash(x, surface);
+      if (i === 0 && near) this.puff(x, surface);
+    };
+    this.movers.push(fish);
+  }
+
+  /** Ballard Locks gate: rises out of its slot to block the quay, sinks to let you pass. */
+  private spawnLockGate(x: number, top: number, w: number, h: number, travelTiles: number, phaseMs: number): void {
+    const G = CONFIG.LOCKGATE;
+    const legs: MoverLeg[] = [
+      { to: 1, ms: G.UP_MS },
+      { to: 0, ms: G.MOVE_MS, ease: easeInOut },
+      { to: 0, ms: G.DOWN_MS },
+      { to: 1, ms: G.MOVE_MS, ease: easeInOut },
+    ];
+    const gate = new Mover(this, x, top, top + travelTiles * CONFIG.TILE, 'lockgate', legs, phaseMs);
+    gate.setDisplaySize(w, h).setDepth(3);
+    this.moverGroup.add(gate);
+    gate.body.setImmovable(true);
+    gate.body.setAllowGravity(false);
+    gate.onLeg = (_leg, i) => {
+      if ((i === 1 || i === 3) && Math.abs(x - this.cameras.main.midPoint.x) < CONFIG.WIDTH) AudioManager.sfx('brick');
+    };
+    this.movers.push(gate);
+    this.gates.push(gate);
+  }
+
+  private updateMovers(dtMs: number): void {
+    const pb = this.player.body;
+    const alive = this.player.fsm !== 'Dead' && pb.enable;
+    for (const m of this.movers) {
+      m.fixedUpdate(dtMs);
+      const mb = m.body;
+      const across = pb.right > mb.left + 4 && pb.left < mb.right - 4;
+      // Rising: carry whoever stands on top. A fast salmon or gate can otherwise outrun Arcade's
+      // separation and slide straight through Jimothy (or fling him on the way).
+      if (alive && across && mb.velocity.y < 0 && pb.velocity.y >= mb.velocity.y - 1 && pb.bottom >= mb.top - 4 && pb.top < mb.top + Math.max(28, mb.height / 2)) {
+        pb.y = mb.top - pb.height;
+        pb.velocity.y = mb.velocity.y;
+      }
+      if (!this.gates.includes(m) || mb.velocity.y <= 0) continue;
+      // a sinking gate never squashes Jimothy: it waits while he's underneath it
+      const gb = m.body;
+      const under = pb.right > gb.left + 4 && pb.left < gb.right - 4 && pb.top >= gb.bottom - 8 && pb.top < gb.bottom + 40;
+      if (under) {
+        m.holdMs = 120;
+        gb.setVelocityY(0);
+      }
+    }
+  }
+
+  private touchBonfire(f: Phaser.Physics.Arcade.Image): void {
+    const p = this.player;
+    if (p.fsm === 'Dead' || p.invulnerable) return;
+    if (p.hurt()) p.knockback(p.x < f.x ? -1 : 1, CONFIG.BONFIRE_KNOCKBACK);
+  }
+
+  private dropSlime(x: number, feetY: number): void {
+    if (!this.textures.get('blocks').has('slime')) return;
+    const img = this.add.image(x, feetY + 2, 'blocks', 'slime').setOrigin(0.5, 1).setDepth(6).setAlpha(0.85).setScale(0.8, 0.7);
+    this.slimes.push({ img, x, y: feetY, bornMs: this.timeMs });
+    if (this.slimes.length > CONFIG.SLIME.MAX) this.slimes.shift()?.img.destroy();
+  }
+
+  /** Slime, sand and potholes under Jimothy's feet set his friction for this step. */
+  private updateSurfaces(): void {
+    const p = this.player;
+    // slime dries up
+    while (this.slimes.length && this.timeMs - this.slimes[0].bornMs > CONFIG.SLIME.LIFE_MS) {
+      const old = this.slimes.shift()!;
+      const img = old.img;
+      this.tweens.add({ targets: img, alpha: 0, duration: 400, onComplete: () => img.destroy() });
+    }
+    if (!p.lastGrounded) {
+      p.onSlime = false;
+      p.onSand = false;
+      return;
+    }
+    const feet = p.body.bottom;
+    p.onSlime = this.slimes.some((sl) => Math.abs(sl.x - p.x) < 44 && Math.abs(sl.y - feet) < 12);
+    const t = this.level.ground.getTileAtWorldXY(p.x, feet + 4);
+    p.onSand = t?.properties?.surface === 'sand';
+  }
+
+  private updateWater(): void {
+    if (this.waters.length === 0) return;
+    const p = this.player;
+    if (p.fsm !== 'Dead') {
+      const w = this.waterAt(p.x);
+      if (w && p.body.bottom > w.rect.y + CONFIG.WATER_SINK_PX && p.body.top < w.rect.bottom) {
+        this.splash(p.x, w.rect.y + 6);
+        p.die();
+      }
+    }
+    for (const e of this.enemies.getChildren() as Enemy[]) {
+      if (!e.alive || !e.body?.enable) continue;
+      const w = this.waterAt(e.x);
+      if (w && e.body.bottom > w.rect.y + CONFIG.WATER_SINK_PX + 10 && e.body.allowGravity) {
+        this.splash(e.x, w.rect.y + 6);
+        e.destroy();
+      }
+    }
+  }
+
+  private updateArena(): void {
+    const a = this.arena;
+    if (!a || a.done || a.engaged || !a.boss?.alive) return;
+    if (this.player.x > a.rect.x + CONFIG.TILE * 3 && this.player.fsm !== 'Dead') this.engageArena(a);
+  }
+
+  private engageArena(a: Arena): void {
+    a.engaged = true;
+    a.hitsAtStart = this.player.hitsTaken;
+    const T = CONFIG.TILE;
+    for (const wx of [a.rect.left, a.rect.right - T]) {
+      const zone = this.add.zone(wx + T / 2, this.level.heightPx / 2, T, this.level.heightPx);
+      this.walls.add(zone);
+      a.walls.push(zone);
+      // a driftwood barricade drops in where the wall is
+      for (let i = 0; i < 3; i++) {
+        const pile = this.add.image(wx + T / 2, this.groundYAt(wx + T / 2) - i * 80, 'blocks', 'logpile').setOrigin(0.5, 1).setDepth(6).setScale(0.82);
+        pile.y -= 600;
+        this.tweens.add({ targets: pile, y: pile.y + 600, duration: 380, delay: i * 90, ease: 'Bounce.out' });
+        a.walls.push(pile);
+      }
+    }
+    if (!Save.get().options.reduceMotion) this.cameras.main.shake(250, 0.006);
+    AudioManager.music('goose');
+    a.boss?.wake();
+    bus.emit(EV.HUD_BOSS, { name: 'CANADA GOOSE', hp: a.boss?.hp ?? 3, max: a.boss?.def.hp ?? 3 });
+  }
+
+  private groundYAt(x: number): number {
+    for (let y = 0; y < this.level.heightPx; y += CONFIG.TILE) {
+      const t = this.level.ground.getTileAtWorldXY(x, y + 1);
+      if (t && t.collides) return y;
+    }
+    return this.level.heightPx;
+  }
+
+  private bossDefeated(boss: Enemy): void {
+    const a = this.arena;
+    bus.emit(EV.HUD_BOSS, null);
+    this.toast('HONK.');
+    AudioManager.music(this.level.music);
+    if (!a) return;
+    a.done = true;
+    for (const w of a.walls) {
+      if (w instanceof Phaser.GameObjects.Zone) {
+        this.walls.remove(w, true, true);
+        continue;
+      }
+      this.tweens.add({ targets: w, alpha: 0, y: '+=40', duration: 500, onComplete: () => w.destroy() });
+    }
+    a.walls = [];
+    // Loyalty Star drops where the goose stood
+    this.powerups.add(new PowerUp(this, boss.x, boss.y - 60, 'star', false));
+    // the third geoduck for a clean fight (the hidden arena block is the fallback)
+    if (this.player.hitsTaken === a.hitsAtStart && !this.run.geoducksFound[2]) {
+      this.geoducks.add(new Geoduck(this, a.rect.centerX, a.rect.y + CONFIG.TILE * 6, 2));
+      this.toast('Not a scratch!');
+    }
+  }
+
+  /** Herschel's fans: camera flashes popping around the joke screen. */
+  private updateFlashes(dtMs: number): void {
+    for (const z of this.flashZones) {
+      if (!Phaser.Geom.Rectangle.Contains(z.rect, this.player.x, this.player.y - 10)) continue;
+      z.cooldownMs -= dtMs;
+      if (z.cooldownMs > 0) continue;
+      z.cooldownMs = CONFIG.CAMERA_FLASH_MS * Phaser.Math.FloatBetween(0.6, 1.4);
+      const fx = Phaser.Math.Between(z.rect.left, z.rect.right);
+      const fy = Phaser.Math.Between(z.rect.top, z.rect.bottom);
+      const flash = this.add.image(fx, fy, 'blocks', 'sparkle').setDepth(13).setScale(0.3).setBlendMode(Phaser.BlendModes.ADD);
+      this.tweens.add({ targets: flash, scale: 0.9, alpha: 0, duration: 260, onComplete: () => flash.destroy() });
     }
   }
 
@@ -347,11 +686,9 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     const prevBottom = pb.bottom - Math.max(pb.deltaY(), 0);
     const fromAbove = prevBottom <= eb.top + CONFIG.STOMP_TOLERANCE && pb.velocity.y >= 0;
     if (enemy.def.stompable && fromAbove) {
-      const ctx: EnemyContext = {
-        player: this.player, cameraCenterX: this.cameras.main.midPoint.x, worldHeight: this.level.heightPx, dtMs: 0,
-        solidAt: (x, y) => this.solidAt(x, y), puff: (x, y) => this.puff(x, y),
-      };
-      if (enemy.onStomp(ctx)) this.player.bounce(this.input_.get('jump'));
+      const hpBefore = enemy.hp;
+      if (enemy.onStomp(this.enemyContext(0))) this.player.bounce(this.input_.get('jump'));
+      if (enemy.isBoss && enemy.hp !== hpBefore && enemy.alive) bus.emit(EV.HUD_BOSS, { name: 'CANADA GOOSE', hp: enemy.hp, max: enemy.def.hp });
       return;
     }
     enemy.onHitPlayer(this.player);
@@ -416,7 +753,13 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
       return;
     }
     if (resolved === 'geoduck') {
-      this.geoducks.add(new Geoduck(this, x, y - CONFIG.TILE, 2));
+      const index = item.startsWith('geoduck:') ? Number(item.slice(8)) || 0 : 2;
+      if (this.run.geoducksFound[index]) {
+        // already have that one: a burst of lattes instead
+        this.addLattes(CONFIG.LATTE_BLOCK_BURST * 5);
+        return;
+      }
+      this.geoducks.add(new Geoduck(this, x, y - CONFIG.TILE, index));
       return;
     }
     AudioManager.sfx('powerup_appear');
@@ -495,6 +838,21 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost {
     Haptics.pulse('clear');
     const groundY = this.player.y;
     const cam = this.cameras.main;
+    const v = this.exitVehicle;
+    if (v) {
+      // hop aboard, then drift off to the right
+      this.tweens.killTweensOf(v);
+      this.player.body.enable = false;
+      const deckY = v.y - v.height * (vehicle === 'boat' ? 0.42 : 0.3);
+      this.tweens.add({
+        targets: this.player, x: v.x - 10, y: deckY, duration: 450, ease: 'Quad.out',
+        onComplete: () => {
+          AudioManager.sfx('ticket');
+          this.tweens.add({ targets: [v, this.player], x: `+=${CONFIG.WIDTH}`, duration: CONFIG.EXIT_BOAT_MS, ease: 'Sine.in', onComplete: () => this.finishLevel(totalMs) });
+        },
+      });
+      return;
+    }
     const busSprite = this.add.image(cam.scrollX + CONFIG.WIDTH + 160, groundY, 'blocks', vehicle === 'bus' ? 'bus' : 'bus').setOrigin(0.5, 1).setDepth(9);
     this.tweens.add({
       targets: busSprite, x: this.player.x + 150, duration: CONFIG.EXIT_BUS_MS, ease: 'Quad.out',

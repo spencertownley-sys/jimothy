@@ -15,6 +15,8 @@ export interface LevelDef {
   hidden?: boolean;
   parent?: string;
   map?: { x: number; y: number };
+  /** story key of the postcard shown after clearing (end of a world) */
+  postcard?: string;
 }
 
 export const LEVELS: LevelDef[] = levelsJson as LevelDef[];

@@ -10,6 +10,12 @@ export interface HudState {
   power: string;
 }
 
+export interface BossState {
+  name: string;
+  hp: number;
+  max: number;
+}
+
 /** Tiny game-wide bus so HUD / Game / Pause never hold references to each other. */
 export const bus = new Phaser.Events.EventEmitter();
 
@@ -18,4 +24,6 @@ export const EV = {
   HUD_TOAST: 'hud:toast',
   HUD_POWER: 'hud:power',
   HUD_SHOW: 'hud:show',
+  /** mini-boss health: `{ name, hp, max }`, or null to hide */
+  HUD_BOSS: 'hud:boss',
 } as const;

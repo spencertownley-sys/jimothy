@@ -34,7 +34,9 @@ export class Seagull extends Enemy {
     if (this.body.blocked.left) this.dir = 1;
     else if (this.body.blocked.right) this.dir = -1;
     this.body.setVelocityX(this.dir * this.def.speed * 1.6);
-    this.y = this.baseY + Math.sin(this.t * Math.PI * 2 * hz) * amp;
+    // drive y through the body (setting y directly desyncs it from the physics sub-steps)
+    const target = this.baseY + Math.sin(this.t * Math.PI * 2 * hz) * amp;
+    this.body.setVelocityY((target - this.bodyAnchorY()) / (ctx.dtMs / 1000));
     this.applyFacing();
   }
 }

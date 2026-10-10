@@ -14,6 +14,15 @@ export interface EnemyContext {
   /** True if a solid/one-way tile exists at the world point. */
   solidAt(x: number, y: number): boolean;
   puff(x: number, y: number): void;
+  /** every other live enemy (shells plough through them) */
+  others(): Enemy[];
+  /** banana-slug trail: a slippery decal on the ground at (x, feetY) */
+  slime(x: number, feetY: number): void;
+  /** a carried geoduck falls free (the 1-2 crow) */
+  dropGeoduck(index: number, x: number, y: number): void;
+  /** the mini-boss is down: open the arena, drop the reward */
+  bossDefeated(boss: Enemy): void;
+  shake(ms: number, intensity: number): void;
 }
 
 /** Base enemy: walker by default. Subclasses override `behave`. */
@@ -25,6 +34,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   alive = true;
   turnAtEdges: boolean;
   protected frozen = false;
+  /** Mini-bosses ignore Flannel and Rain Drops; only stomps count. */
+  readonly isBoss: boolean = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: EnemyDef, obj?: TiledObjectLike) {
     super(scene, x, y, 'enemies', def.frame);
@@ -42,6 +53,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset((fw - def.w) / 2, fh - def.h);
     this.body.setMaxVelocityY(CONFIG.MAX_FALL_SPEED);
     this.applyFacing();
+  }
+
+  /**
+   * Sprite y as the physics body sees it right now. Between the sub-steps of one frame the body
+   * moves but the sprite only catches up afterwards, so velocity-driven paths must aim from here.
+   */
+  protected bodyAnchorY(): number {
+    return this.body.y - (this.body.offset.y - this.displayOriginY) * this.scaleY;
+  }
+
+  /** Swap to another pose and keep the feet planted (origin is bottom-centre). */
+  protected setPose(frame: string, w: number, h: number): void {
+    if (this.frame.name !== frame) this.setFrame(frame);
+    const fw = this.frame.realWidth;
+    const fh = this.frame.realHeight;
+    this.body.setSize(w, h, false);
+    this.body.setOffset((fw - w) / 2, fh - h);
   }
 
   protected applyFacing(): void {

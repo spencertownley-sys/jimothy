@@ -23,7 +23,7 @@ export const POWERUPS: Record<PowerUpKind, PowerUpDef> = {
 export function resolveBlockItem(item: string, power: PowerState): PowerUpKind | 'latte' | 'geoduck' {
   if (item === 'teriyaki' && power !== 'small') return 'jacket';
   if (item in POWERUPS) return item as PowerUpKind;
-  if (item === 'geoduck') return 'geoduck';
+  if (item === 'geoduck' || item.startsWith('geoduck:')) return 'geoduck';
   return 'latte';
 }
 

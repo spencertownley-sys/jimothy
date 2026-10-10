@@ -5,6 +5,7 @@ import { getInput } from '../core/input';
 import { newRun, RUN_KEY, type RunState } from '../core/run';
 import { Save } from '../core/save/Save';
 import { FIRST_LEVEL } from '../core/save/SaveV1';
+import { STORIES } from '../data/stories';
 import { mapLevels, type LevelDef } from '../levels/LevelDef';
 import { COLORS, uiText } from '../ui/text';
 
@@ -165,7 +166,12 @@ export class WorldMapScene extends Phaser.Scene {
     run.geoducksFound = [...found];
     this.registry.set(RUN_KEY, run);
     this.cameras.main.fadeOut(300, 0, 0, 0);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('Game', { levelId: lvl.id }));
+    // A level's cutscene plays on the way in until the level has been cleared once.
+    const story = STORIES[lvl.id] && !Save.get().cleared.includes(lvl.id) ? lvl.id : undefined;
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (story) this.scene.start('Intro', { story, then: { scene: 'Game', data: { levelId: lvl.id } } });
+      else this.scene.start('Game', { levelId: lvl.id });
+    });
   }
 
   override update(): void {

@@ -1,6 +1,7 @@
-// Generates the Tiled .tmj maps for World 1-1 ("Welcome to Ballard") and its storm-drain
-// bonus room, following docs/03_LEVEL_SPECS.md screen by screen. Tiled can open and edit
-// the output; this script is just faster than hand-placing 240 columns.
+// Generates the Tiled .tmj maps for World 1 — 1-1 ("Welcome to Ballard") and its storm-drain
+// bonus room, 1-2 "The Locks" and 1-3 "Golden Gardens at Dusk" — following
+// docs/03_LEVEL_SPECS.md screen by screen. Tiled can open and edit the output; this script is
+// just faster than hand-placing hundreds of columns.
 //
 // Art: every tile and prop is cut from Higgsfield generations by scripts/gen-art.sh. Tiles
 // carry collision; trees, bins, signs and other decor are `prop` objects drawn as sprites.
@@ -47,6 +48,30 @@ const tileset = {
   ],
 };
 
+// World 1 lock-wall and beach tilesets (scripts/gen-art.sh `tileset`): 16 tiles each.
+//   1-4 surface · 5-8 body · 9-10 one-way plank · 11-14 deep body · 15 invisible one-way · 16 blank
+const W1 = { TOP: 1, BODY: 5, PLANK: 9, DEEP: 11, GHOST: 15 };
+const smallTileset = (name, extra = []) => ({
+  firstgid: 1,
+  name,
+  tilewidth: T,
+  tileheight: T,
+  margin: 2,
+  spacing: 4,
+  columns: 8,
+  tilecount: 16,
+  image: `../tilesets/${name}.png`,
+  imagewidth: 416,
+  imageheight: 104,
+  tiles: [
+    ...[W1.PLANK, W1.PLANK + 1, W1.GHOST].map((id) => ({ id: id - 1, properties: [{ name: 'oneway', type: 'bool', value: true }] })),
+    ...extra,
+  ],
+});
+const locksTileset = smallTileset('locks');
+// sand is a touch slidier underfoot
+const beachTileset = smallTileset('beach', [0, 1, 2, 3].map((i) => ({ id: W1.TOP - 1 + i, properties: [{ name: 'surface', type: 'string', value: 'sand' }] })));
+
 const propList = (props) =>
   Object.entries(props).map(([k, v]) => ({
     name: k,
@@ -55,7 +80,8 @@ const propList = (props) =>
   }));
 
 class MapBuilder {
-  constructor(width, height, props) {
+  constructor(width, height, props, ts = tileset) {
+    this.tileset = ts;
     this.width = width;
     this.height = height;
     this.props = props;
@@ -134,6 +160,40 @@ class MapBuilder {
   cedar(x, h = 9) {
     this.prop('cedar', x, 12, { h, w: 1 });
   }
+  // --- lock-wall / beach tilesets ---------------------------------------------------
+  /** Solid ground whose walkable surface is row `top`, filled down to the bottom of the map. */
+  solid(x0, x1, top) {
+    for (let x = x0; x <= x1; x++) {
+      this.set('ground', x, top, W1.TOP + (x % 4));
+      if (top + 1 < this.height) this.set('ground', x, top + 1, W1.BODY + (x % 4));
+      for (let y = top + 2; y < this.height; y++) this.set('ground', x, y, W1.DEEP + (x % 2) + 2 * (y % 2));
+    }
+  }
+  /** One-way dock plank / driftwood log. */
+  plank(x0, x1, y) {
+    for (let x = x0; x <= x1; x++) this.set('oneway', x, y, W1.PLANK + (x % 2));
+  }
+  /** Invisible one-way ledge (the top of a prop, like the bathhouse roof). */
+  ghost(x0, x1, y) {
+    for (let x = x0; x <= x1; x++) this.set('oneway', x, y, W1.GHOST);
+  }
+  /** Deadly water from column x0 to x1; the foam line sits 20 px under row `surfaceRow`'s top. */
+  water(x0, x1, surfaceRow, style = 'canal') {
+    const y = surfaceRow * T + 20;
+    this.objects.push({
+      id: this.nextId++, name: '', type: 'water', visible: true, rotation: 0,
+      x: x0 * T, y, width: (x1 - x0 + 1) * T, height: this.height * T - y + 40,
+      properties: propList({ style }),
+    });
+  }
+  /** Leaping salmon: the top of its back reaches row `topRow`; it rests below the map. */
+  salmon(tx, topRow, phase, dir = 1) {
+    this.objects.push({
+      id: this.nextId++, name: '', type: 'salmon', visible: true, rotation: 0,
+      x: tx * T - T, y: topRow * T, width: 3 * T, height: this.height * T - topRow * T + 40,
+      properties: propList({ phase, dir }),
+    });
+  }
   latte(tx, ty) { this.obj('latte', tx, ty); }
   lattes(txs, ty) { for (const tx of txs) this.latte(tx, ty); }
   toJSON() {
@@ -152,7 +212,7 @@ class MapBuilder {
         tileLayer('ground', 0), tileLayer('oneway', 1), tileLayer('decor', 2), tileLayer('hazards', 3),
         { id: 5, name: 'objects', type: 'objectgroup', visible: true, opacity: 1, x: 0, y: 0, draworder: 'topdown', objects: this.objects },
       ],
-      tilesets: [tileset],
+      tilesets: [this.tileset],
     };
   }
 }
@@ -274,4 +334,182 @@ b.obj('drain', 23, 12, { w: 2, h: 1, props: { targetLevel: '1-1', targetSpawn: '
 b.obj('sign', 22, 8.6, { w: 2.4, h: 3, props: { text: 'EXIT ↓' } });
 writeFileSync(join(OUT, '1-1-bonus.tmj'), JSON.stringify(b.toJSON()));
 
-console.log('maps written: 1-1.tmj, 1-1-bonus.tmj');
+
+// ------------------------------------------------------------------------------------
+// 1-2 "The Locks" — 11 screens (290 tiles). Lock gates, a salmon ladder, crows that turn
+// into shells, banana slugs, Herschel. Exit: hop on a lock boat.
+// ------------------------------------------------------------------------------------
+{
+  const k = new MapBuilder(290, 15, { music: 'ballard', parallaxSet: 'locks', timeLimit: 0, wind: 0, autoScroll: 0, par: 120, name: 'The Locks' }, locksTileset);
+  // Screen 1: the quay. Bollards, a life ring, a seagull.
+  k.solid(0, 49, 13);
+  k.obj('player_spawn', 2, 12, { name: 'start' });
+  k.prop('bollard', 6, 12, { h: 1.1 });
+  k.prop('lifering', 9, 12, { h: 1.6 });
+  k.latte(12, 11); k.latte(13, 10); k.latte(14, 9); k.latte(15, 10); k.latte(16, 11);
+  k.obj('enemy:seagull', 21, 12, { props: { dir: -1 } });
+  k.prop('rope', 24, 12, { h: 0.7 });
+  // Screen 2: crow intro. Stomp it, kick the shell, watch it bowl the two gulls into the canal.
+  k.obj('enemy:crow', 33, 12, { props: { dir: -1 } });
+  k.lattes([29, 30], 11);
+  k.obj('enemy:seagull', 39, 12, { props: { dir: 1, turnAtEdges: true } });
+  k.obj('enemy:seagull', 43, 12, { props: { dir: 1, turnAtEdges: true } });
+  k.prop('bollard', 47, 12, { h: 1.1 });
+  k.water(50, 52, 13);
+  k.lattes([50, 51, 52], 10);
+  // Screen 3: up onto the lock wall. Lock gate #1 rises out of its slot and sinks again;
+  // Geoduck #1 waits in the slot under it, and the gate lifts you out like an elevator.
+  // A hidden block above the gate holds the Flannel for the crow + gull gauntlet.
+  k.solid(53, 55, 13); k.solid(56, 57, 12); k.solid(58, 59, 11); k.solid(60, 63, 10);
+  // no floor tiles in the slot: the lowered gate is the floor, so it can lift whoever stands on it
+  k.obj('lockgate', 64, 5, { w: 2, h: 7, props: { travel: 7, phase: 0 } });
+  k.obj('geoduck', 64.5, 11, { props: { index: 0 } });
+  k.obj('qblock', 61, 6, { props: { item: 'flannel', hidden: true } });
+  k.solid(66, 81, 10);
+  k.prop('bollard', 67, 9, { h: 1.1 });
+  k.obj('enemy:crow', 71, 9, { props: { dir: -1 } });
+  k.obj('enemy:seagull', 78, 6, { props: { dir: -1, swoop: true } });
+  k.lattes([69, 70, 72, 73, 75, 76], 8);
+  // Screen 4: down to the canal path. Banana slug intro: its trail is slippery.
+  k.solid(82, 83, 11); k.solid(84, 85, 12); k.solid(86, 97, 13);
+  k.obj('enemy:slug', 93, 12, { props: { dir: -1 } });
+  k.prop('rope', 89, 12, { h: 0.7 });
+  k.water(98, 100, 13);
+  k.lattes([98, 99, 100], 10);
+  // Screen 5: lock gate #2 (no secret this time, just lattes in its slot) and slug #2 on the wall.
+  k.solid(101, 108, 13); k.solid(109, 110, 12); k.solid(111, 112, 11); k.solid(113, 115, 10);
+  k.obj('lockgate', 116, 5, { w: 2, h: 7, props: { travel: 7, phase: 2600 } });
+  k.lattes([116, 117], 11);
+  k.solid(118, 127, 10);
+  k.obj('enemy:slug', 123, 9, { props: { dir: -1 } });
+  k.prop('lifering', 120, 9, { h: 1.6 });
+  k.solid(128, 129, 11); k.solid(130, 131, 12); k.solid(132, 165, 13);
+  // Screen 6 (joke): Herschel the sea lion, lounging with a salmon, immune to everything.
+  // Tourists' camera flashes pop around him. Then the checkpoint.
+  k.obj('sign', 137.5, 9.6, { w: 3, h: 3.4, props: { text: 'HERSCHEL\n(immune to\neverything)' } });
+  k.prop('sealion', 146, 12, { h: 3.1 });
+  k.obj('flashzone', 136, 6, { w: 20, h: 7 });
+  k.lattes([152, 153, 154], 11);
+  k.obj('checkpoint', 158, 11, { w: 1, h: 2, name: 'cp1' });
+  // Screens 7-8: the salmon ladder. Pillars step up left to right over the fish ladder; salmon
+  // leap out of each pool and hold for 1.2 s. Skip the last salmon and drop to the low dock for
+  // Geoduck #2 — the salmon lifts you back up out of the water.
+  k.water(166, 200, 13);
+  k.salmon(168, 11, 0);
+  k.solid(171, 172, 12);
+  k.salmon(175, 10, 600);
+  k.solid(178, 179, 11);
+  k.salmon(182, 9, 1200);
+  k.solid(185, 186, 10);
+  k.salmon(189, 8, 1800);
+  k.solid(192, 193, 9);
+  k.lattes([168, 175, 182, 189], 9);
+  k.plank(196, 198, 12);
+  k.obj('geoduck', 197, 11, { props: { index: 1 } });
+  k.salmon(197, 8, 2400);
+  k.solid(201, 207, 7);
+  k.prop('fishwindow', 204, 11, { h: 2, front: true });
+  k.lattes([202, 203, 204, 205], 6);
+  // Screen 9: down to the canal. A crow carrying Geoduck #3 patrols over the water between two
+  // docks: jump off a dock and stomp it in mid-air.
+  k.solid(208, 209, 9); k.solid(210, 211, 11); k.solid(212, 221, 13);
+  k.lattes([214, 215, 216], 11);
+  k.water(222, 235, 13);
+  k.plank(225, 227, 10);
+  k.plank(231, 233, 10);
+  k.obj('enemy:crow', 229, 7, { props: { dir: -1, fly: true, carries: 2 } });
+  // Screen 10: last stretch of quay with a swooping gull.
+  k.solid(236, 279, 13);
+  k.obj('enemy:seagull', 252, 9, { props: { dir: -1, swoop: true } });
+  k.lattes([244, 245, 246, 258, 259, 260], 11);
+  k.prop('bollard', 264, 12, { h: 1.1 });
+  k.obj('sign', 268, 9.6, { w: 2.6, h: 3.4, props: { text: 'BOATS\n→' } });
+  k.prop('rope', 274, 12, { h: 0.7 });
+  // Screen 11: exit — hop aboard the lock boat.
+  k.water(280, 289, 13);
+  k.obj('exit', 282, 9, { w: 5, h: 4, props: { vehicle: 'boat' } });
+  writeFileSync(join(OUT, '1-2.tmj'), JSON.stringify(k.toJSON()));
+}
+
+// ------------------------------------------------------------------------------------
+// 1-3 "Golden Gardens at Dusk" — 8 screens + the goose arena (262 tiles). Sand, driftwood
+// see-saw, bonfires, swooping gulls, one runaway cart. Exit: drift off in a kayak.
+// ------------------------------------------------------------------------------------
+{
+  const g = new MapBuilder(262, 15, { music: 'dusk', parallaxSet: 'beach', timeLimit: 0, wind: 0, autoScroll: 0, par: 105, name: 'Golden Gardens at Dusk' }, beachTileset);
+  // Swoopers dive for your Teriyaki: the bottom of the dive clips big Jimothy, not small.
+  const swoop = (tx, ty = 8.5) => g.obj('enemy:seagull', tx, ty, { props: { dir: -1, swoop: true } });
+  // Screen 1: the beach at sundown.
+  g.solid(0, 59, 12);
+  g.obj('player_spawn', 2, 11, { name: 'start' });
+  g.obj('sign', 5, 8, { w: 3.4, h: 4, props: { text: 'GOLDEN GARDENS\nPARK CLOSES\nAT DUSK' } });
+  g.prop('picnic', 12, 11, { h: 1.5 });
+  g.prop('dunegrass', 16, 11, { h: 1.4 });
+  g.lattes([18, 19, 20], 10);
+  swoop(23);
+  // Screen 2: the parking lot. Runaway cart intro, then the first bonfire on its own.
+  g.prop('stones', 30, 11, { h: 1 });
+  g.obj('enemy:cart', 40, 11, { props: { dir: -1 } });
+  g.prop('dunegrass', 44, 11, { h: 1.4 });
+  g.obj('bonfire', 48, 10, { w: 1, h: 2 });
+  g.latte(47, 8); g.latte(48, 7); g.latte(49, 8);
+  // Screen 3: a sand dip. The lattes say "jump over it"; Geoduck #1 says "don't".
+  g.solid(60, 66, 14);
+  g.obj('geoduck', 63, 13, { props: { index: 0 } });
+  g.lattes([60, 61, 62, 64, 65, 66], 9);
+  g.solid(67, 261, 12);
+  swoop(56);
+  g.plank(72, 74, 9);
+  g.lattes([72, 73, 74], 8);
+  swoop(76);
+  // Screen 4: driftwood see-saw beside the bathhouse. Drop onto the high end holding jump to
+  // launch onto the roof: Geoduck #2.
+  g.obj('seesaw', 89, 9, { w: 6, h: 3, props: { tilt: -1 } });
+  g.prop('bathhouse', 101, 11, { h: 5, front: false });
+  g.ghost(99, 103, 7);
+  g.obj('geoduck', 101, 6, { props: { index: 1 } });
+  g.prop('dunegrass', 108, 11, { h: 1.2 });
+  // Screen 5: bonfires to hop, checkpoint between them.
+  g.obj('bonfire', 112, 10, { w: 1, h: 2 });
+  swoop(113);
+  g.plank(115, 116, 9);
+  g.obj('checkpoint', 119, 10, { w: 1, h: 2, name: 'cp1' });
+  g.obj('bonfire', 125, 10, { w: 1, h: 2 });
+  g.lattes([124, 125, 126], 7);
+  swoop(130);
+  // Screen 6: a tidal inlet to jump, picnic tables, driftwood.
+  g.prop('picnic', 140, 11, { h: 1.5 });
+  g.water(146, 149, 12, 'dusk');
+  for (let x = 146; x <= 149; x++) for (let y = 12; y < 15; y++) g.set('ground', x, y, 0);
+  g.lattes([146, 147, 148, 149], 9);
+  swoop(152);
+  g.prop('driftstump', 156, 11, { h: 1.2 });
+  // Screen 7: driftwood ledges, another bonfire.
+  g.plank(166, 168, 9);
+  g.plank(172, 174, 7);
+  g.lattes([166, 167, 168], 8);
+  g.lattes([172, 173, 174], 6);
+  swoop(174);
+  g.obj('bonfire', 179, 10, { w: 1, h: 2 });
+  g.prop('stones', 185, 11, { h: 1 });
+  // Screen 8: the approach.
+  swoop(195);
+  g.obj('sign', 200, 8, { w: 3.2, h: 4, props: { text: 'BEWARE\nOF GOOSE' } });
+  g.prop('dunegrass', 206, 11, { h: 1.4 });
+  g.lattes([207, 208, 209, 210], 10);
+  // Goose arena (1.5 screens): driftwood walls drop in behind you; a hidden block holds
+  // Geoduck #3 in case the no-damage reward slips away.
+  g.obj('arena', 214, 0, { w: 40, h: 12 });
+  g.plank(220, 223, 8);
+  g.plank(234, 237, 8);
+  g.plank(246, 249, 8);
+  g.obj('qblock', 229, 8, { props: { item: 'geoduck:2', hidden: true } });
+  g.obj('enemy:goose', 244, 11, { props: { dir: -1 } });
+  // Exit: the kayak at the waterline.
+  g.water(256, 261, 12, 'dusk');
+  for (let x = 256; x <= 261; x++) for (let y = 12; y < 15; y++) g.set('ground', x, y, 0);
+  g.obj('exit', 257, 8, { w: 4, h: 4, props: { vehicle: 'kayak' } });
+  writeFileSync(join(OUT, '1-3.tmj'), JSON.stringify(g.toJSON()));
+}
+
+console.log('maps written: 1-1, 1-1-bonus, 1-2, 1-3');

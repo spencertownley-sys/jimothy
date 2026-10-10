@@ -1,8 +1,48 @@
 {
  "frames": {
-  "bus": {
+  "lockgate": {
    "frame": {
     "x": 2,
+    "y": 2,
+    "w": 96,
+    "h": 264
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 264
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 264
+   }
+  },
+  "boat": {
+   "frame": {
+    "x": 100,
+    "y": 2,
+    "w": 334,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 334,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 334,
+    "h": 120
+   }
+  },
+  "bus": {
+   "frame": {
+    "x": 436,
     "y": 2,
     "w": 306,
     "h": 110
@@ -22,7 +62,7 @@
   },
   "checkpoint_off": {
    "frame": {
-    "x": 310,
+    "x": 744,
     "y": 2,
     "w": 76,
     "h": 96
@@ -42,7 +82,7 @@
   },
   "checkpoint_on": {
    "frame": {
-    "x": 388,
+    "x": 822,
     "y": 2,
     "w": 76,
     "h": 96
@@ -57,12 +97,32 @@
    },
    "sourceSize": {
     "w": 76,
+    "h": 96
+   }
+  },
+  "logpile": {
+   "frame": {
+    "x": 900,
+    "y": 2,
+    "w": 147,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 147,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 147,
     "h": 96
    }
   },
   "sparkle": {
    "frame": {
-    "x": 466,
+    "x": 1049,
     "y": 2,
     "w": 96,
     "h": 94
@@ -80,9 +140,29 @@
     "h": 94
    }
   },
+  "bonfire": {
+   "frame": {
+    "x": 1147,
+    "y": 2,
+    "w": 97,
+    "h": 84
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 97,
+    "h": 84
+   },
+   "sourceSize": {
+    "w": 97,
+    "h": 84
+   }
+  },
   "qblock": {
    "frame": {
-    "x": 564,
+    "x": 1246,
     "y": 2,
     "w": 72,
     "h": 72
@@ -102,7 +182,7 @@
   },
   "qblock_used": {
    "frame": {
-    "x": 638,
+    "x": 1320,
     "y": 2,
     "w": 72,
     "h": 72
@@ -118,11 +198,51 @@
    "sourceSize": {
     "w": 72,
     "h": 72
+   }
+  },
+  "seesaw_rock": {
+   "frame": {
+    "x": 1394,
+    "y": 2,
+    "w": 91,
+    "h": 70
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 70
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 70
+   }
+  },
+  "salmon": {
+   "frame": {
+    "x": 1487,
+    "y": 2,
+    "w": 132,
+    "h": 62
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 132,
+    "h": 62
+   },
+   "sourceSize": {
+    "w": 132,
+    "h": 62
    }
   },
   "brick": {
    "frame": {
-    "x": 712,
+    "x": 1621,
     "y": 2,
     "w": 48,
     "h": 48
@@ -138,12 +258,52 @@
    "sourceSize": {
     "w": 48,
     "h": 48
+   }
+  },
+  "seesaw_log": {
+   "frame": {
+    "x": 1671,
+    "y": 2,
+    "w": 300,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 300,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 300,
+    "h": 46
+   }
+  },
+  "kayak": {
+   "frame": {
+    "x": 2,
+    "y": 268,
+    "w": 220,
+    "h": 38
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 220,
+    "h": 38
+   },
+   "sourceSize": {
+    "w": 220,
+    "h": 38
    }
   },
   "puff": {
    "frame": {
-    "x": 762,
-    "y": 2,
+    "x": 224,
+    "y": 268,
     "w": 36,
     "h": 28
    },
@@ -160,10 +320,30 @@
     "h": 28
    }
   },
+  "slime": {
+   "frame": {
+    "x": 262,
+    "y": 268,
+    "w": 96,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 26
+   }
+  },
   "brick_bit": {
    "frame": {
-    "x": 800,
-    "y": 2,
+    "x": 360,
+    "y": 268,
     "w": 25,
     "h": 20
    },
@@ -182,8 +362,8 @@
   },
   "raindrop": {
    "frame": {
-    "x": 827,
-    "y": 2,
+    "x": 387,
+    "y": 268,
     "w": 13,
     "h": 18
    },
@@ -206,8 +386,8 @@
   "version": "1",
   "image": "blocks.png",
   "size": {
-   "w": 842,
-   "h": 114
+   "w": 1973,
+   "h": 308
   },
   "scale": "1"
  }

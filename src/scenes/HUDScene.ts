@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import { bus, EV, type HudState } from '../core/events';
+import { bus, EV, type BossState, type HudState } from '../core/events';
 import { Save } from '../core/save/Save';
 import { COLORS, uiText } from '../ui/text';
 
@@ -16,6 +16,8 @@ export class HUDScene extends Phaser.Scene {
   private onUpdate = (s: HudState): void => this.apply(s);
   private onToast = (t: string): void => this.toast(t);
   private onPower = (kind: string): void => this.flashPower(kind);
+  private onBoss = (b: BossState | null): void => this.showBoss(b);
+  private boss?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'HUD' });
@@ -34,10 +36,12 @@ export class HUDScene extends Phaser.Scene {
     bus.on(EV.HUD_UPDATE, this.onUpdate);
     bus.on(EV.HUD_TOAST, this.onToast);
     bus.on(EV.HUD_POWER, this.onPower);
+    bus.on(EV.HUD_BOSS, this.onBoss);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       bus.off(EV.HUD_UPDATE, this.onUpdate);
       bus.off(EV.HUD_TOAST, this.onToast);
       bus.off(EV.HUD_POWER, this.onPower);
+      bus.off(EV.HUD_BOSS, this.onBoss);
     });
   }
 
@@ -53,6 +57,22 @@ export class HUDScene extends Phaser.Scene {
       const ms = s.timeMs;
       this.timer.setText(`${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}.${Math.floor((ms % 1000) / 100)}`);
     } else this.timer.setText('');
+  }
+
+  /** Top-centre boss card: the name and one goose feather (pip) per stomp left. */
+  private showBoss(b: BossState | null): void {
+    this.boss?.destroy();
+    this.boss = undefined;
+    if (!b) return;
+    const W = CONFIG.WIDTH;
+    const c = this.add.container(W / 2, 120);
+    c.add(this.add.rectangle(0, 0, 360, 64, 0x1c2426, 0.55).setStrokeStyle(3, 0x8a6a40));
+    c.add(uiText(this, 0, -14, b.name, { fontSize: 20, color: COLORS.amber }).setOrigin(0.5));
+    for (let i = 0; i < b.max; i++) {
+      const pip = this.add.circle((i - (b.max - 1) / 2) * 34, 14, 10, i < b.hp ? 0xf4efe6 : 0x445049).setStrokeStyle(2, 0x1c2426);
+      c.add(pip);
+    }
+    this.boss = c;
   }
 
   private toast(text: string): void {

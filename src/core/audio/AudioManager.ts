@@ -70,6 +70,10 @@ const TRACKS: Record<string, Track> = {
   flannel: { bpm: 150, wave: 'sawtooth', gain: 0.07, bass: [0, 0, 3, 5], arp: [[0, 12, 0, 12], [0, 12, 3, 15], [3, 15, 3, 15], [5, 17, 3, 15]] },
   // "Storm drain" – the bonus-room variant: same tune, lower and slower
   drain: { bpm: 80, wave: 'triangle', gain: 0.07, bass: [-12, -5, -3, -7], arp: [[0, 4, 7, 4], [7, 11, 14, 11], [9, 12, 16, 12], [5, 9, 12, 9]] },
+  // "Golden Hour" – 1-3 at dusk, slow and warm
+  dusk: { bpm: 84, wave: 'sine', gain: 0.08, bass: [0, 9, 5, 7], arp: [[12, 16, 19, 16], [21, 24, 28, 24], [17, 21, 24, 21], [19, 23, 26, 23]] },
+  // "Honk If You're Angry" – goose fight
+  goose: { bpm: 160, wave: 'square', gain: 0.05, bass: [0, 3, 5, 3], arp: [[12, 15, 19, 15], [15, 19, 22, 19], [17, 20, 24, 20], [15, 19, 22, 19]] },
 };
 
 const A3 = 220;
@@ -97,6 +101,8 @@ const SAMPLE_SFX: Record<string, { file: string; gain: number }> = {
   menu_move: { file: 'sfx_menu_move', gain: 0.45 },
   chainsaw: { file: 'sfx_chainsaw', gain: 0.55 },
   truck: { file: 'sfx_truck', gain: 0.6 },
+  honk: { file: 'sfx_honk', gain: 0.7 },
+  splash: { file: 'sfx_splash', gain: 0.6 },
 };
 
 interface MusicFile {
@@ -111,6 +117,8 @@ const MUSIC_FILES: Record<string, MusicFile> = {
   ballard: { file: 'ballard', gain: 0.42 }, // "Feel So Right" – Dag Anderson
   flannel: { file: 'flannel', gain: 0.4 }, // "Wild in Seattle" – Rockin' For Decades
   drain: { file: 'ballard', gain: 0.38, lowpass: 650, rate: 0.94 },
+  dusk: { file: 'dusk', gain: 0.42 }, // "Staycation" – Paper Twins
+  goose: { file: 'goose', gain: 0.4 }, // "Gotta Catch That Unicorn" – Josef Bel Habib
 };
 
 type LoadState = 'loading' | 'ready' | 'failed';

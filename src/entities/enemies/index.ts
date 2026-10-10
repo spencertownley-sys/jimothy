@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import type { TiledObjectLike } from '../../core/tiled';
 import type { Enemy } from './Enemy';
+import { BananaSlug } from './BananaSlug';
+import { CanadaGoose } from './CanadaGoose';
+import { Crow } from './Crow';
 import { HoppingCone } from './HoppingCone';
+import { RunawayCart } from './RunawayCart';
 import { Seagull } from './Seagull';
 
 type Factory = (scene: Phaser.Scene, x: number, y: number, obj?: TiledObjectLike) => Enemy;
@@ -10,6 +14,10 @@ type Factory = (scene: Phaser.Scene, x: number, y: number, obj?: TiledObjectLike
 export const ENEMY_FACTORIES: Record<string, Factory> = {
   seagull: (s, x, y, o) => new Seagull(s, x, y, o),
   cone: (s, x, y, o) => new HoppingCone(s, x, y, o),
+  crow: (s, x, y, o) => new Crow(s, x, y, o),
+  slug: (s, x, y, o) => new BananaSlug(s, x, y, o),
+  cart: (s, x, y, o) => new RunawayCart(s, x, y, o),
+  goose: (s, x, y, o) => new CanadaGoose(s, x, y, o),
 };
 
 const warned = new Set<string>();
@@ -27,4 +35,5 @@ export function spawnEnemy(scene: Phaser.Scene, id: string, x: number, y: number
 }
 
 export { Enemy } from './Enemy';
+export { CanadaGoose } from './CanadaGoose';
 export type { EnemyContext } from './Enemy';

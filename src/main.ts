@@ -74,7 +74,7 @@ window.addEventListener('visibilitychange', () => {
 // test hooks (Playwright reads these)
 declare global {
   interface Window {
-    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[] };
+    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[]; start: (scene: string, data?: object) => void; geoducks: () => boolean[] };
   }
 }
 window.__jimothy = {
@@ -110,4 +110,13 @@ window.__jimothy = {
   },
   audio: () => ({ files: AudioManager.status(), playing: AudioManager.playing }),
   activeScenes: () => game.scene.getScenes(true).map((s) => s.scene.key),
+  /** jump straight to a scene, e.g. start('Game', { levelId: '1-2' }) or start('Intro', { story: '1-3' }) */
+  start: (scene, data) => {
+    for (const s of game.scene.getScenes(true)) game.scene.stop(s.scene.key);
+    game.scene.start(scene, data);
+  },
+  geoducks: () => {
+    const run = game.registry.get('run') as { geoducksFound?: boolean[] } | undefined;
+    return run?.geoducksFound ?? [];
+  },
 };

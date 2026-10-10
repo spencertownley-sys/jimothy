@@ -3,9 +3,10 @@
 A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
-**Status:** World 1-1 "Welcome to Ballard" is playable end to end — Boot → Title → opening story scene → World
-Map → 1-1 (with the storm-drain bonus room) → Level Clear → the 44 bus rides to the next stop on
-the painted Ballard map, with saving. See
+**Status:** World 1 (Ballard) is playable end to end — Boot → Title → opening story scene → World
+Map → 1-1 "Welcome to Ballard" (with the storm-drain bonus room) → 1-2 "The Locks" → 1-3 "Golden
+Gardens at Dusk" (Canada Goose mini-boss) → the World 1 postcard, with saving. 1-2 and 1-3 each
+open with a short painted cutscene the first time you enter them from the map. See
 `CLAUDE.md` for the build plan and `docs/` for the design bundle.
 
 ## Run it
@@ -32,9 +33,9 @@ Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 | `npm run build` | typecheck + static build to `dist/` (`base: './'`, so it works from any Pages subpath) |
 | `npm run lint` / `npm run test` | ESLint · Vitest (input edge detection, jump-feel sim, save migration) |
 | `npm run test:e2e` | Playwright smoke test: boots, starts 1-1, runs right, no console errors. Set `CHROMIUM_PATH` to use a preinstalled Chromium. |
-| `npm run gen:art` | builds every sprite, the World 1 tileset and the parallax layers from the Higgsfield images (needs ImageMagick) |
+| `npm run gen:art` | builds every sprite, the World 1 tilesets (Ballard, lock wall, beach), water and parallax layers and the story panels from the Higgsfield images (needs ImageMagick) |
 | `npm run pack:atlases` | packs `art/sprites/*` into `public/assets/atlases/*.png + .json` |
-| `npm run gen:level` | regenerates `public/assets/maps/1-1.tmj` and `1-1-bonus.tmj` from `scripts/gen-level.mjs` |
+| `npm run gen:level` | regenerates the World 1 maps (`1-1`, `1-1-bonus`, `1-2`, `1-3`) in `public/assets/maps/` from `scripts/gen-level.mjs` |
 | `node scripts/dev/flow.mjs out/` | dev probe that drives the built game through the whole 1-1 flow and screenshots each screen |
 
 ## Layout
