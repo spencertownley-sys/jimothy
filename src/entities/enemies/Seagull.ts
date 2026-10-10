@@ -7,6 +7,8 @@ import { Enemy, type EnemyContext } from './Enemy';
 /** Goomba with a fry. `swoop: true` in Tiled makes it glide in a sine arc instead of walking. */
 export class Seagull extends Enemy {
   private swoop: boolean;
+  /** flock swoopers fly faster than Jimothy runs */
+  private speedMul: number;
   private baseY: number;
   private t = 0;
   private squawked = false;
@@ -14,6 +16,7 @@ export class Seagull extends Enemy {
   constructor(scene: Phaser.Scene, x: number, y: number, obj?: TiledObjectLike) {
     super(scene, x, y, ENEMIES.seagull, obj);
     this.swoop = getProp(obj, 'swoop', false);
+    this.speedMul = getProp(obj, 'speedMul', 1.6);
     this.baseY = y;
     if (this.swoop) this.body.setAllowGravity(false);
   }
@@ -33,7 +36,7 @@ export class Seagull extends Enemy {
     const hz = this.def.params.swoopHz;
     if (this.body.blocked.left) this.dir = 1;
     else if (this.body.blocked.right) this.dir = -1;
-    this.body.setVelocityX(this.dir * this.def.speed * 1.6);
+    this.body.setVelocityX(this.dir * this.def.speed * this.speedMul);
     // drive y through the body (setting y directly desyncs it from the physics sub-steps)
     const target = this.baseY + Math.sin(this.t * Math.PI * 2 * hz) * amp;
     this.body.setVelocityY((target - this.bodyAnchorY()) / (ctx.dtMs / 1000));

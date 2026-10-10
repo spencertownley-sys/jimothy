@@ -10,7 +10,9 @@ const warned = new Set<string>();
  */
 export function spawnProp(scene: Phaser.Scene, obj: TiledObjectLike): Phaser.GameObjects.Image | undefined {
   const sprite = getProp<string>(obj, 'sprite', '');
-  const tex = scene.textures.get('props');
+  // most decor lives in the props atlas; a few pieces borrow enemy art (the fry's worshipping gulls)
+  const atlas = getProp<string>(obj, 'atlas', 'props');
+  const tex = scene.textures.get(atlas);
   if (!sprite || !tex || !tex.has(sprite)) {
     if (!warned.has(sprite)) {
       warned.add(sprite);
@@ -20,7 +22,7 @@ export function spawnProp(scene: Phaser.Scene, obj: TiledObjectLike): Phaser.Gam
   }
   const r = objectRect(obj);
   const top = getProp<string>(obj, 'align', 'bottom') === 'top';
-  const img = scene.add.image(r.centerX, top ? r.y : r.bottom, 'props', sprite).setOrigin(0.5, top ? 0 : 1);
+  const img = scene.add.image(r.centerX, top ? r.y : r.bottom, atlas, sprite).setOrigin(0.5, top ? 0 : 1).setFlipX(getProp(obj, 'flip', false));
   if (getProp(obj, 'stretch', false)) img.setDisplaySize(r.width, r.height);
   else img.setScale(r.height / img.height);
   img.setDepth(getProp(obj, 'front', false) ? 11 : 2);

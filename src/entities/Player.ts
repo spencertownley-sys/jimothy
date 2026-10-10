@@ -32,6 +32,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   crouching = false;
   onSlime = false;
   onSand = false;
+  /** pressing into the sticky gum wall: slide down it slowly */
+  wallSlide = false;
   /** hits taken this life (the goose fight's no-damage geoduck reads it) */
   hitsTaken = 0;
   /** vertical speed at the end of the last step, before the next collision zeroes it */
@@ -65,7 +67,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1); // x,y = feet, so hitbox swaps keep him planted
     this.setDepth(10);
     this.body.setCollideWorldBounds(false);
-    this.body.setMaxVelocityY(CONFIG.MAX_FALL_SPEED);
+    // Arcade's max velocity caps both directions; launches (see-saw, scooter pad) go faster than
+    // the fall cap, so the body limit is the rise cap and the fall is clamped in fixedUpdate.
+    this.body.setMaxVelocityY(CONFIG.MAX_RISE_SPEED);
     this.applyPose(true);
   }
 
@@ -178,6 +182,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     else if (Math.abs(vx) > 10) this.fsm = 'Run';
     else this.fsm = 'Idle';
 
+    if (this.body.velocity.y > CONFIG.MAX_FALL_SPEED) this.body.setVelocityY(CONFIG.MAX_FALL_SPEED);
     this.idleMs = this.fsm === 'Idle' ? this.idleMs + dtMs : 0;
     this.animMs += dtMs;
     this.applyPose();
@@ -405,6 +410,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.crouching = true;
       this.applyPose(true);
     }
+  }
+
+  /** The seagull flock steals his power-up: back to small, no damage, short i-frames. */
+  stripPower(): boolean {
+    if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable) return false;
+    this.setPower('small', 'Shrink');
+    this.iframesMs = CONFIG.HURT_IFRAMES_MS;
+    AudioManager.sfx('hurt');
+    Haptics.pulse('hurt');
+    return true;
   }
 
   /** Restore carried state when re-entering a level (drains, checkpoints). */

@@ -20,9 +20,109 @@
     "h": 264
    }
   },
-  "boat": {
+  "elevator": {
    "frame": {
     "x": 100,
+    "y": 2,
+    "w": 108,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 150
+   }
+  },
+  "fishmonger_catch": {
+   "frame": {
+    "x": 210,
+    "y": 2,
+    "w": 85,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 85,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 85,
+    "h": 150
+   }
+  },
+  "fishmonger_throw": {
+   "frame": {
+    "x": 297,
+    "y": 2,
+    "w": 79,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 79,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 79,
+    "h": 150
+   }
+  },
+  "watertaxi": {
+   "frame": {
+    "x": 378,
+    "y": 2,
+    "w": 358,
+    "h": 140
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 358,
+    "h": 140
+   },
+   "sourceSize": {
+    "w": 358,
+    "h": 140
+   }
+  },
+  "frost_ring": {
+   "frame": {
+    "x": 738,
+    "y": 2,
+    "w": 220,
+    "h": 134
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 220,
+    "h": 134
+   },
+   "sourceSize": {
+    "w": 220,
+    "h": 134
+   }
+  },
+  "boat": {
+   "frame": {
+    "x": 960,
     "y": 2,
     "w": 334,
     "h": 120
@@ -42,7 +142,7 @@
   },
   "bus": {
    "frame": {
-    "x": 436,
+    "x": 1296,
     "y": 2,
     "w": 306,
     "h": 110
@@ -60,9 +160,49 @@
     "h": 110
    }
   },
+  "handtruck": {
+   "frame": {
+    "x": 1604,
+    "y": 2,
+    "w": 99,
+    "h": 110
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 99,
+    "h": 110
+   },
+   "sourceSize": {
+    "w": 99,
+    "h": 110
+   }
+  },
+  "pig": {
+   "frame": {
+    "x": 1705,
+    "y": 2,
+    "w": 130,
+    "h": 110
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 130,
+    "h": 110
+   },
+   "sourceSize": {
+    "w": 130,
+    "h": 110
+   }
+  },
   "checkpoint_off": {
    "frame": {
-    "x": 744,
+    "x": 1837,
     "y": 2,
     "w": 76,
     "h": 96
@@ -82,7 +222,7 @@
   },
   "checkpoint_on": {
    "frame": {
-    "x": 822,
+    "x": 1915,
     "y": 2,
     "w": 76,
     "h": 96
@@ -102,8 +242,8 @@
   },
   "logpile": {
    "frame": {
-    "x": 900,
-    "y": 2,
+    "x": 2,
+    "y": 268,
     "w": 147,
     "h": 96
    },
@@ -120,10 +260,30 @@
     "h": 96
    }
   },
+  "gondola": {
+   "frame": {
+    "x": 151,
+    "y": 268,
+    "w": 96,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 94
+   }
+  },
   "sparkle": {
    "frame": {
-    "x": 1049,
-    "y": 2,
+    "x": 249,
+    "y": 268,
     "w": 96,
     "h": 94
    },
@@ -142,8 +302,8 @@
   },
   "bonfire": {
    "frame": {
-    "x": 1147,
-    "y": 2,
+    "x": 347,
+    "y": 268,
     "w": 97,
     "h": 84
    },
@@ -160,10 +320,30 @@
     "h": 84
    }
   },
+  "dahlia": {
+   "frame": {
+    "x": 446,
+    "y": 268,
+    "w": 67,
+    "h": 84
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 84
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 84
+   }
+  },
   "qblock": {
    "frame": {
-    "x": 1246,
-    "y": 2,
+    "x": 515,
+    "y": 268,
     "w": 72,
     "h": 72
    },
@@ -182,8 +362,8 @@
   },
   "qblock_used": {
    "frame": {
-    "x": 1320,
-    "y": 2,
+    "x": 589,
+    "y": 268,
     "w": 72,
     "h": 72
    },
@@ -202,8 +382,8 @@
   },
   "seesaw_rock": {
    "frame": {
-    "x": 1394,
-    "y": 2,
+    "x": 663,
+    "y": 268,
     "w": 91,
     "h": 70
    },
@@ -218,12 +398,32 @@
    "sourceSize": {
     "w": 91,
     "h": 70
+   }
+  },
+  "icebox": {
+   "frame": {
+    "x": 756,
+    "y": 268,
+    "w": 72,
+    "h": 62
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 62
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 62
    }
   },
   "salmon": {
    "frame": {
-    "x": 1487,
-    "y": 2,
+    "x": 830,
+    "y": 268,
     "w": 132,
     "h": 62
    },
@@ -240,10 +440,50 @@
     "h": 62
    }
   },
+  "aquarium": {
+   "frame": {
+    "x": 964,
+    "y": 268,
+    "w": 64,
+    "h": 58
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 64,
+    "h": 58
+   },
+   "sourceSize": {
+    "w": 64,
+    "h": 58
+   }
+  },
   "brick": {
    "frame": {
-    "x": 1621,
-    "y": 2,
+    "x": 1030,
+    "y": 268,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   }
+  },
+  "crate": {
+   "frame": {
+    "x": 1080,
+    "y": 268,
     "w": 48,
     "h": 48
    },
@@ -262,8 +502,8 @@
   },
   "seesaw_log": {
    "frame": {
-    "x": 1671,
-    "y": 2,
+    "x": 1130,
+    "y": 268,
     "w": 300,
     "h": 46
    },
@@ -280,9 +520,29 @@
     "h": 46
    }
   },
+  "scooter_pad": {
+   "frame": {
+    "x": 1432,
+    "y": 268,
+    "w": 110,
+    "h": 41
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 110,
+    "h": 41
+   },
+   "sourceSize": {
+    "w": 110,
+    "h": 41
+   }
+  },
   "kayak": {
    "frame": {
-    "x": 2,
+    "x": 1544,
     "y": 268,
     "w": 220,
     "h": 38
@@ -302,7 +562,7 @@
   },
   "puff": {
    "frame": {
-    "x": 224,
+    "x": 1766,
     "y": 268,
     "w": 36,
     "h": 28
@@ -322,7 +582,7 @@
   },
   "slime": {
    "frame": {
-    "x": 262,
+    "x": 1804,
     "y": 268,
     "w": 96,
     "h": 26
@@ -342,7 +602,7 @@
   },
   "brick_bit": {
    "frame": {
-    "x": 360,
+    "x": 1902,
     "y": 268,
     "w": 25,
     "h": 20
@@ -362,7 +622,7 @@
   },
   "raindrop": {
    "frame": {
-    "x": 387,
+    "x": 1929,
     "y": 268,
     "w": 13,
     "h": 18
@@ -386,8 +646,8 @@
   "version": "1",
   "image": "blocks.png",
   "size": {
-   "w": 1973,
-   "h": 308
+   "w": 1993,
+   "h": 366
   },
   "scale": "1"
  }

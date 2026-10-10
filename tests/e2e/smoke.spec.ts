@@ -42,8 +42,8 @@ test('1-1 loads and Jimothy can run', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-/** 1-2 and 1-3: cutscene plays, skips into the level, Jimothy can move, no console errors. */
-for (const id of ['1-2', '1-3']) {
+/** Every level with a cutscene: it plays, skips into the level, Jimothy can move, no console errors. */
+for (const id of ['1-2', '1-3', '2-1', '2-2', '2-3']) {
   test(`${id} cutscene → level loads and Jimothy can move`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (msg) => {

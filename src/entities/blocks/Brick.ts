@@ -4,12 +4,12 @@ import { Haptics } from '../../core/haptics';
 import type { Player } from '../Player';
 import type { BlockHost } from './QuestionBlock';
 
-/** Mossy cobblestone. Bounces when small, breaks when Big. */
+/** Mossy cobblestone (or a produce crate at the market). Bounces when small, breaks when Big. */
 export class Brick extends Phaser.Physics.Arcade.Sprite {
   declare body: Phaser.Physics.Arcade.StaticBody;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'blocks', 'brick');
+  constructor(scene: Phaser.Scene, x: number, y: number, frame = 'brick') {
+    super(scene, x, y, 'blocks', scene.textures.get('blocks').has(frame) ? frame : 'brick');
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
     this.setDepth(4);

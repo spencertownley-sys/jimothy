@@ -3,6 +3,7 @@ import { CONFIG } from '../config';
 import { AudioManager } from '../core/audio/AudioManager';
 import { getInput } from '../core/input';
 import { STORIES, type StoryBeat } from '../data/stories';
+import { queueStory } from '../levels/worlds';
 import { COLORS, FONT_BODY, uiText } from '../ui/text';
 
 export interface StorySceneData {
@@ -38,6 +39,11 @@ export class IntroScene extends Phaser.Scene {
 
   private beats: StoryBeat[] = [];
   private then: { scene: string; data?: object } = { scene: 'WorldMap' };
+
+  preload(): void {
+    const data = this.sys.settings.data as StorySceneData | undefined;
+    queueStory(this, data?.story ?? 'opening');
+  }
 
   create(data?: StorySceneData): void {
     const story = STORIES[data?.story ?? 'opening'] ?? STORIES.opening;

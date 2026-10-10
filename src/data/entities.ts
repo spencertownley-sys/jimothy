@@ -18,8 +18,8 @@ export interface EnemyDef {
 export const ENEMIES: Record<EnemyId, EnemyDef> = {
   seagull: { id: 'seagull', frame: 'seagull', speed: 70, hp: 1, stompable: true, w: 48, h: 36, turnAtEdges: false, params: { swoopAmp: 60, swoopHz: 0.6 } },
   crow: { id: 'crow', frame: 'crow_walk', speed: 90, hp: 1, stompable: true, w: 44, h: 36, turnAtEdges: true, params: { shellSpeed: 520, shellW: 38, shellH: 34, flyAmp: 40, flyHz: 0.5, flyRange: 220 } },
-  freeze: { id: 'freeze', frame: 'freeze', speed: 0, hp: 1, stompable: false, w: 56, h: 90, turnAtEdges: false, params: { pulseMs: 3000, pulseRadius: 110, knockback: 420, thawMs: 3000 } },
-  scooter: { id: 'scooter', frame: 'scooter', speed: 620, hp: 1, stompable: true, w: 60, h: 40, turnAtEdges: false, params: { hornMs: 800 } },
+  freeze: { id: 'freeze', frame: 'freeze_idle', speed: 0, hp: 1, stompable: false, w: 56, h: 90, turnAtEdges: false, params: { pulseMs: 3000, pulseRadius: 130, knockback: 420, thawMs: 3000 } },
+  scooter: { id: 'scooter', frame: 'scooter_run', speed: 620, hp: 1, stompable: true, w: 60, h: 40, turnAtEdges: false, params: { hornMs: 800, triggerPx: 900 } },
   cone: { id: 'cone', frame: 'cone', speed: 140, hp: 1, stompable: true, w: 32, h: 48, turnAtEdges: false, params: { hopVy: -520, hopEveryMs: 900 } },
   slug: { id: 'slug', frame: 'slug', speed: 35, hp: 1, stompable: true, w: 64, h: 28, turnAtEdges: true, params: {} },
   cart: { id: 'cart', frame: 'cart_run', speed: 60, hp: 1, stompable: true, w: 64, h: 56, turnAtEdges: true, params: { chargeSpeed: 380, losRange: 420, losHeight: 90, chargeMs: 1600, coolMs: 900 } },

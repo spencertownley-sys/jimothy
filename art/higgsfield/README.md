@@ -64,3 +64,28 @@ Files here are 2048 px JPEG copies of the originals.
 | 64_dock_planks.jpg | dock plank one-way platforms (1-2) | 9cd11e47-5d4c-484e-b0bb-2fa13a351784 |
 | 65_driftwood_platform.jpg | driftwood log one-way platforms (1-3) | cbaae491-6921-437f-8949-26a52a28fad6 |
 | 66_cart_logpile.jpg | runaway shopping cart, driftwood barricade (arena walls) | 6649c822-9c4c-4127-b8c5-dfc4ddd06ab4 |
+| 70_pike_far.jpg | World 2 far parallax (Elliott Bay, ferry) | 3f2e8da8-efb4-4d23-9cc4-95af7f387dd7 |
+| 71_pike_mid.jpg | 2-1 mid parallax (market arcade, generic PUBLIC MARKET neon) | e3753aa2-48c0-4c64-a7c0-4d9670cfe85a |
+| 72_pike_near.jpg | 2-1 near parallax (flower and produce stalls) | 7d8fbb74-3c90-4e53-ad3b-26e264149a77 |
+| 73_market_floor_tex.jpg | market floor tiles | f9561970-a75c-4cc2-8494-0d732ab63497 |
+| 74_gum_wall_tex.jpg | sticky gum wall tiles | 84e927e7-f6ec-4e9f-b380-09d98b9126fe |
+| 75_cobble_alley_tex.jpg | Post Alley cobblestone tiles | ea5fbbab-54d6-46cc-bda6-554ae21bf3ec |
+| 76_alley_mid.jpg | 2-2 mid parallax (brick alley, fire escapes) | 88fe9410-8819-4936-9b9e-7e0b5a5caa92 |
+| 77_waterfront_mid.jpg | 2-3 mid parallax (waterfront sheds, aquarium) | e94ae777-e429-4046-93b0-58ed3c90f7bc |
+| 78_boardwalk_tex.jpg | pier boardwalk tiles | e86bfc07-8065-4e56-a6ed-9b116e34666b |
+| 79_fishmonger.jpg | fishmonger: throwing and catching | d2e92b5b-47f7-4280-a2b5-ae7a1d27a5c9 |
+| 80_market_stalls.jpg | fish-ice display, dahlia bucket (bounce pad), produce crate (brick) | 667c245d-7957-4df8-9404-244bf4433cc1 |
+| 81_brass_pig.jpg | the brass pig (joke screen) | b1b2aecd-d690-40fb-bd8c-ad125119c279 |
+| 82_freeze_sheet.jpg | the Freeze: idle, thawed, frost pulse ring | b0472c55-a427-4917-8086-0a353b81a471 |
+| 83_scooter_sheet.jpg | rogue e-scooter: riding, tipped over (trampoline) | c66cda03-ebc4-46a8-9690-3746414738fc |
+| 84_alley_props.jpg | stage door, service elevator, selfie tourist, crow nest | 8605e20c-7b7d-4946-ac58-c7c5826be47c |
+| 85_great_wheel.jpg | Great Wheel frame and gondola | c117983a-c276-4150-b7f6-5933aa858a22 |
+| 86_waterfront_props.jpg | World's Largest Fry, aquarium window block, fish hand truck | a7fc4cad-016f-43d6-972f-956a14cff3d9 |
+| 87_water_taxi.jpg | water taxi (2-3 exit) | 294c54db-f417-4f0a-a96d-23d734f058a8 |
+| 88_seagull_flock.jpg | the chasing seagull flock | 42334669-f065-43bd-8919-907acf93a8c0 |
+| 89_map_pike.jpg | World 2 map (Pike Place and the waterfront) | a5814b91-7c5b-4adc-9268-a43ec84cd693 |
+| 90_story_market.jpg | 2-1 cutscene: arriving at the market | de334f4a-a060-48a8-b69a-c88c63ea1a7f |
+| 91_story_fishmonger.jpg | 2-1 cutscene: the fishmonger saw a LUXE crate | 700828fb-dce3-41dc-82c0-655cab99bbcf |
+| 92_story_gumwall.jpg | 2-2 cutscene: LUXE flyer stuck in the gum wall | 09eb2e44-0688-4cf8-8bc1-bf8f4809568b |
+| 93_story_waterfront.jpg | 2-3 cutscene: the crate onto a water taxi, the flock notices | 378e07ef-e272-4234-ba80-19c18e27891e (on-model regen, image refs 21 + 94) |
+| 94_postcard_pike.jpg | World 2 postcard: Jimothy with a fish on his head | 2311c43d-3de9-43e4-a1b9-9564d32418b6 (on-model regen, image refs 21 + 63) |

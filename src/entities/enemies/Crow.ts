@@ -46,6 +46,8 @@ export class Crow extends Enemy {
     switch (this.mode) {
       case 'walk':
         this.walk(ctx);
+        // Pike Place crows help themselves to your lattes
+        ctx.stealLattes(this.body.left, this.body.top - 8, this.body.right, this.body.bottom);
         return;
       case 'shell':
         this.body.setVelocityX(0);

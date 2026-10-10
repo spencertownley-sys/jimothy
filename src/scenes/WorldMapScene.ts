@@ -6,7 +6,8 @@ import { newRun, RUN_KEY, type RunState } from '../core/run';
 import { Save } from '../core/save/Save';
 import { FIRST_LEVEL } from '../core/save/SaveV1';
 import { STORIES } from '../data/stories';
-import { mapLevels, type LevelDef } from '../levels/LevelDef';
+import { levelById, mapLevels, type LevelDef } from '../levels/LevelDef';
+import { queueWorld, WORLDS, worldOf } from '../levels/worlds';
 import { COLORS, uiText } from '../ui/text';
 
 interface MapData {
@@ -24,9 +25,20 @@ export class WorldMapScene extends Phaser.Scene {
   private toastText?: Phaser.GameObjects.Text;
   private input_ = getInput().state;
   private busy = false;
+  private world = 1;
 
   constructor() {
     super({ key: 'WorldMap' });
+  }
+
+  /** The map shows one neighbourhood at a time: the world of the level in focus. */
+  private focusOf(data?: MapData): string {
+    const save = Save.get();
+    return data?.focus ?? save.unlocked[save.unlocked.length - 1];
+  }
+
+  preload(): void {
+    queueWorld(this, worldOf(this.focusOf(this.sys.settings.data as MapData | undefined)).id);
   }
 
   create(data: MapData): void {
@@ -34,17 +46,19 @@ export class WorldMapScene extends Phaser.Scene {
     const H = CONFIG.HEIGHT;
     this.busy = false;
     this.input_.reset();
-    this.levels = mapLevels();
     const save = Save.get();
-    const focus = data?.focus ?? save.unlocked[save.unlocked.length - 1];
+    const focus = this.focusOf(data);
+    this.world = worldOf(focus).id;
+    this.levels = mapLevels().filter((l) => l.world === this.world);
     this.index = Math.max(0, this.levels.findIndex((l) => l.id === focus));
     if (!save.unlocked.includes(this.levels[this.index].id)) this.index = 0;
 
-    // World 1 shows only Ballard: the neighbourhood, the Locks and Golden Gardens.
-    if (this.textures.exists('bg:map_ballard')) this.add.image(W / 2, H / 2, 'bg:map_ballard');
+    // Each world's map shows only its own neighbourhood (Ballard; Pike Place and the waterfront…).
+    const wdef = WORLDS[this.world];
+    if (this.textures.exists(wdef.mapBg)) this.add.image(W / 2, H / 2, wdef.mapBg);
     else if (this.textures.exists('bg:worldmap')) this.add.image(W / 2, H / 2, 'bg:worldmap');
     else this.cameras.main.setBackgroundColor(COLORS.cedar);
-    uiText(this, W / 2, 46, 'WORLD 1  ·  BALLARD', { fontSize: 40, color: COLORS.amber }).setOrigin(0.5).setStroke(COLORS.ink, 8);
+    uiText(this, W / 2, 46, `WORLD ${this.world}  ·  ${wdef.name}`, { fontSize: 40, color: COLORS.amber }).setOrigin(0.5).setStroke(COLORS.ink, 8);
 
     // the 44's route between stops: cream dashes on a dark outline so they read over the houses
     const g = this.add.graphics();
@@ -89,6 +103,11 @@ export class WorldMapScene extends Phaser.Scene {
     this.placeCursor();
     const from = data?.from ? this.levels.find((l) => l.id === data.from) : undefined;
     if (from?.map && from !== this.levels[this.index]) this.rideBus(from.map, this.levels[this.index].map!);
+    else if (data?.from && levelById(data.from)?.world !== this.world) {
+      // arriving from the previous world: the bus drives in from the edge of the map
+      const to = this.levels[this.index].map!;
+      this.rideBus({ x: -60, y: to.y }, to);
+    }
     AudioManager.music('title');
     if (data?.toast) this.toast(data.toast);
     if (this.scene.isActive('HUD')) this.scene.stop('HUD');
@@ -130,7 +149,16 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private moveTo(i: number): void {
-    if (i < 0 || i >= this.levels.length) return;
+    if (i < 0 || i >= this.levels.length) {
+      // step off the end of this map onto the next / previous world, if you've been there
+      const other = mapLevels().filter((l) => l.world === this.world + (i < 0 ? -1 : 1));
+      const target = i < 0 ? other[other.length - 1] : other[0];
+      if (target && Save.get().unlocked.includes(target.id)) {
+        AudioManager.sfx('menu_move');
+        this.scene.restart({ focus: target.id });
+      }
+      return;
+    }
     if (!Save.get().unlocked.includes(this.levels[i].id)) {
       AudioManager.sfx('menu_back');
       return;

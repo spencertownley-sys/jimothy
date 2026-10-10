@@ -4,7 +4,9 @@ import type { Enemy } from './Enemy';
 import { BananaSlug } from './BananaSlug';
 import { CanadaGoose } from './CanadaGoose';
 import { Crow } from './Crow';
+import { Freeze } from './Freeze';
 import { HoppingCone } from './HoppingCone';
+import { RogueScooter } from './RogueScooter';
 import { RunawayCart } from './RunawayCart';
 import { Seagull } from './Seagull';
 
@@ -18,6 +20,8 @@ export const ENEMY_FACTORIES: Record<string, Factory> = {
   slug: (s, x, y, o) => new BananaSlug(s, x, y, o),
   cart: (s, x, y, o) => new RunawayCart(s, x, y, o),
   goose: (s, x, y, o) => new CanadaGoose(s, x, y, o),
+  freeze: (s, x, y, o) => new Freeze(s, x, y, o),
+  scooter: (s, x, y, o) => new RogueScooter(s, x, y, o),
 };
 
 const warned = new Set<string>();

@@ -50,8 +50,8 @@ const tileset = {
 
 // World 1 lock-wall and beach tilesets (scripts/gen-art.sh `tileset`): 16 tiles each.
 //   1-4 surface · 5-8 body · 9-10 one-way plank · 11-14 deep body · 15 invisible one-way · 16 blank
-const W1 = { TOP: 1, BODY: 5, PLANK: 9, DEEP: 11, GHOST: 15 };
-const smallTileset = (name, extra = []) => ({
+const W1 = { TOP: 1, BODY: 5, PLANK: 9, DEEP: 11, GHOST: 15, WALL: 17, GUM: 21 };
+const smallTileset = (name, extra = [], rows = 2) => ({
   firstgid: 1,
   name,
   tilewidth: T,
@@ -59,10 +59,10 @@ const smallTileset = (name, extra = []) => ({
   margin: 2,
   spacing: 4,
   columns: 8,
-  tilecount: 16,
+  tilecount: 8 * rows,
   image: `../tilesets/${name}.png`,
   imagewidth: 416,
-  imageheight: 104,
+  imageheight: 52 * rows,
   tiles: [
     ...[W1.PLANK, W1.PLANK + 1, W1.GHOST].map((id) => ({ id: id - 1, properties: [{ name: 'oneway', type: 'bool', value: true }] })),
     ...extra,
@@ -71,6 +71,13 @@ const smallTileset = (name, extra = []) => ({
 const locksTileset = smallTileset('locks');
 // sand is a touch slidier underfoot
 const beachTileset = smallTileset('beach', [0, 1, 2, 3].map((i) => ({ id: W1.TOP - 1 + i, properties: [{ name: 'surface', type: 'string', value: 'sand' }] })));
+// World 2: market floor (2-1), the alley with the sticky gum wall + gum blobs (2-2), pier boardwalk (2-3)
+const marketTileset = smallTileset('market');
+const alleyTileset = smallTileset('alley', [
+  ...[0, 1, 2, 3].map((i) => ({ id: W1.WALL - 1 + i, properties: [{ name: 'sticky', type: 'bool', value: true }] })),
+  { id: W1.GUM - 1, properties: [{ name: 'hazard', type: 'string', value: 'gum' }] },
+], 3);
+const pierTileset = smallTileset('pier');
 
 const propList = (props) =>
   Object.entries(props).map(([k, v]) => ({
@@ -149,12 +156,12 @@ class MapBuilder {
    * Decor sprite from the `props` atlas. (tx, bottomRow) is the tile the sprite stands on top of
    * the bottom of; `h` is its height in tiles (width follows the image unless `stretch`).
    */
-  prop(sprite, tx, bottomRow, { h = 1, w = 1, front = false, stretch = false, align = 'bottom', dx = 0 } = {}) {
+  prop(sprite, tx, bottomRow, { h = 1, w = 1, front = false, stretch = false, align = 'bottom', dx = 0, atlas = 'props', flip = false } = {}) {
     const bottom = (bottomRow + 1) * T;
     this.objects.push({
       id: this.nextId++, name: sprite, type: 'prop', visible: true, rotation: 0,
       x: tx * T + (T - w * T) / 2 + dx * T, y: bottom - h * T, width: w * T, height: h * T,
-      properties: propList({ sprite, front, stretch, align }),
+      properties: propList({ sprite, front, stretch, align, ...(atlas !== 'props' ? { atlas } : {}), ...(flip ? { flip } : {}) }),
     });
   }
   cedar(x, h = 9) {
@@ -168,6 +175,25 @@ class MapBuilder {
       if (top + 1 < this.height) this.set('ground', x, top + 1, W1.BODY + (x % 4));
       for (let y = top + 2; y < this.height; y++) this.set('ground', x, y, W1.DEEP + (x % 2) + 2 * (y % 2));
     }
+  }
+  /** Solid filler (deep body tiles) for a rectangle: alley ceilings, walls, building blocks. */
+  block(x0, x1, y0, y1) {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('ground', x, y, W1.DEEP + (x % 2) + 2 * (y % 2));
+  }
+  /** Sticky gum wall (solid): slide down it slowly while pushing into it. */
+  gumWall(x0, x1, y0, y1) {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('ground', x, y, W1.WALL + (x % 2) + 2 * (y % 2));
+  }
+  /** Gum wall art with no collision (backdrop for the joke screen). */
+  gumDecor(x0, x1, y0, y1) {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('decor', x, y, W1.WALL + (x % 2) + 2 * (y % 2));
+  }
+  /** Gum blobs on the floor of row `row` (slippery, like slug slime). */
+  gum(x0, x1, row) {
+    for (let x = x0; x <= x1; x++) this.set('hazards', x, row, W1.GUM);
+  }
+  clear(x0, x1, y0, y1) {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('ground', x, y, 0);
   }
   /** One-way dock plank / driftwood log. */
   plank(x0, x1, y) {
@@ -512,4 +538,247 @@ writeFileSync(join(OUT, '1-1-bonus.tmj'), JSON.stringify(b.toJSON()));
   writeFileSync(join(OUT, '1-3.tmj'), JSON.stringify(g.toJSON()));
 }
 
-console.log('maps written: 1-1, 1-1-bonus, 1-2, 1-3');
+// ------------------------------------------------------------------------------------
+// 2-1 "Market Arcade" — 12 screens (320 tiles). Fishmongers lob salmon you can ride, dahlia
+// buckets bounce, produce crates break, crows steal lattes, one Freeze blocks the aisle, and the
+// brass pig pays out if you stand on it. Exit: hop on a fish-delivery hand truck.
+// ------------------------------------------------------------------------------------
+{
+  const a = new MapBuilder(320, 15, { music: 'market', parallaxSet: 'pike', timeLimit: 0, wind: 0, autoScroll: 0, par: 135, name: 'Market Arcade' }, marketTileset);
+  const crate = (x, y) => a.obj('brick', x, y, { props: { style: 'crate' } });
+  // Screen 1: under the PUBLIC MARKET sign.
+  a.solid(0, 33, 12);
+  a.obj('player_spawn', 2, 11, { name: 'start' });
+  a.obj('sign', 6, 8, { w: 3.4, h: 4, props: { text: 'PIKE PLACE\nwatch for\nflying fish' } });
+  a.prop('fishstall', 12, 11, { h: 2.3 });
+  a.lattes([16, 17, 18, 19, 20], 10);
+  a.prop('fishstall', 24, 11, { h: 2.3 });
+  // Screen 2: the first salmon toss, across a gap between stalls. Ride the fish.
+  a.obj('salmonthrow', 31, 9, { w: 13, h: 3, props: { apex: 2.5, phase: 0 } });
+  a.solid(39, 60, 12);
+  a.lattes([34, 35, 36, 37, 38], 7);
+  a.obj('enemy:crow', 50, 11, { props: { dir: -1 } });
+  a.lattes([47, 48, 49, 50, 51, 52], 11); // the crow eats these if you dawdle
+  // Screen 3: the Freeze stands in the aisle. Go over on the stall awning (or wait for the pulse).
+  a.obj('qblock', 56, 8, { props: { item: 'teriyaki' } });
+  a.plank(60, 68, 8);
+  a.lattes([61, 62, 63, 64, 65, 66, 67], 7);
+  a.solid(61, 108, 12);
+  a.obj('enemy:freeze', 64, 11);
+  crate(71, 8); crate(72, 8); a.obj('qblock', 73, 8, { props: { item: 'latte' } }); crate(74, 8);
+  a.prop('fishstall', 78, 11, { h: 2.3 });
+  // Screen 4: the long throw. Ride its peak up to the upper arcade: Geoduck #1.
+  a.obj('salmonthrow', 84, 9, { w: 18, h: 3, props: { apex: 6.2, phase: 900 } });
+  a.plank(90, 96, 4);
+  a.obj('geoduck', 93, 3, { props: { index: 0 } });
+  a.lattes([90, 91, 95, 96], 3);
+  a.obj('enemy:seagull', 104, 11, { props: { dir: -1 } });
+  // Screen 5: dahlia buckets bounce you up to the flower-stall roofs.
+  a.obj('bouncepad', 112, 10, { w: 1, h: 2, props: { style: 'dahlia' } });
+  a.plank(114, 117, 6);
+  a.lattes([114, 115, 116, 117], 5);
+  a.obj('bouncepad', 120, 10, { w: 1, h: 2, props: { style: 'dahlia' } });
+  a.plank(122, 125, 5);
+  a.lattes([122, 123, 124, 125], 4);
+  a.solid(109, 175, 12);
+  a.obj('enemy:crow', 128, 11, { props: { dir: -1 } });
+  crate(131, 8); crate(132, 8); crate(133, 8);
+  // Screen 6 (joke): the brass pig. Stand on it for three seconds. A hidden block above it.
+  a.obj('pig', 143, 10, { w: 2, h: 2 });
+  a.obj('qblock', 143.5, 6, { props: { item: 'doubleshot', hidden: true } });
+  a.obj('sign', 137, 8, { w: 3, h: 4, props: { text: 'PLEASE DO\nNOT RIDE\nTHE PIG' } });
+  a.obj('qblock', 156, 8, { props: { item: 'teriyaki' } });
+  a.obj('enemy:seagull', 164, 11, { props: { dir: -1 } });
+  a.obj('enemy:seagull', 169, 11, { props: { dir: -1 } });
+  // Screen 7: checkpoint, second toss over another gap.
+  a.obj('checkpoint', 173, 10, { w: 1, h: 2, name: 'cp1' });
+  a.obj('salmonthrow', 176, 9, { w: 13, h: 3, props: { apex: 3, phase: 1500 } });
+  a.lattes([179, 180, 181, 182, 183], 6);
+  a.solid(184, 245, 12);
+  // Screen 8: the fish-ice display — bump it from below for Geoduck #2. Crows work the stalls.
+  a.prop('fishstall', 191, 11, { h: 2.3 });
+  a.obj('qblock', 196, 8, { props: { item: 'geoduck:1', style: 'icebox' } });
+  a.obj('enemy:crow', 200, 11, { props: { dir: -1 } });
+  a.obj('enemy:crow', 206, 11, { props: { dir: 1 } });
+  a.lattes([199, 200, 201, 202, 203, 204, 205, 206], 11);
+  crate(210, 8); crate(211, 8);
+  // Screen 9: bounce up and over a crow line.
+  a.obj('bouncepad', 216, 10, { w: 1, h: 2, props: { style: 'dahlia' } });
+  a.plank(218, 224, 6);
+  a.lattes([218, 219, 220, 221, 222, 223, 224], 5);
+  a.obj('enemy:seagull', 226, 11, { props: { dir: -1 } });
+  // Screen 10: the Sanitary Market alley — a high walkway of planks, crows on patrol, and
+  // Geoduck #3 tucked behind the crow nest at the far end.
+  a.obj('sign', 237, 8, { w: 3, h: 4, props: { text: 'SANITARY\nMARKET\n↗' } });
+  a.obj('bouncepad', 241, 10, { w: 1, h: 2, props: { style: 'dahlia' } });
+  a.plank(243, 263, 7);
+  a.obj('enemy:crow', 248, 6, { props: { dir: 1 } });
+  a.obj('enemy:crow', 255, 6, { props: { dir: -1 } });
+  a.lattes([246, 247, 251, 252, 258, 259], 6);
+  a.obj('geoduck', 262, 6, { props: { index: 2 } });
+  a.prop('crownest', 262, 6, { h: 1.3, front: true, dx: 0.3 });
+  a.solid(249, 320 - 1, 12);
+  a.lattes([270, 271, 272, 273], 11);
+  a.prop('fishstall', 280, 11, { h: 2.3 });
+  // Screens 11-12: home stretch, then the delivery hand truck out of the market.
+  a.lattes([290, 291, 292, 293, 294, 295], 10);
+  a.obj('sign', 300, 8, { w: 3, h: 4, props: { text: 'DELIVERIES\n→' } });
+  a.obj('exit', 308, 9, { w: 4, h: 3, props: { vehicle: 'handtruck' } });
+  writeFileSync(join(OUT, '2-1.tmj'), JSON.stringify(a.toJSON()));
+}
+
+// ------------------------------------------------------------------------------------
+// 2-2 "The Gum Wall" — down Post Alley and back up (140 × 30 tiles). The gum wall is sticky:
+// push into it while falling to slide down slowly. Gum blobs on the floor are slippery.
+// Scooters honk before they shoot through the low corridor. Exit: the service elevator.
+// ------------------------------------------------------------------------------------
+{
+  const g = new MapBuilder(140, 30, { music: 'alley', parallaxSet: 'alley', timeLimit: 0, wind: 0, autoScroll: 0, par: 150, name: 'The Gum Wall' }, alleyTileset);
+  // Top of the alley (surface row 8).
+  g.solid(0, 30, 8);
+  g.obj('player_spawn', 2, 7, { name: 'start' });
+  g.obj('sign', 5, 4, { w: 3, h: 4, props: { text: 'POST\nALLEY\n↓' } });
+  g.lattes([10, 11, 12], 6);
+  g.obj('enemy:slug', 20, 7, { props: { dir: -1 } });
+  g.gum(24, 26, 7);
+  // The drop: a shaft with the giant gum wall on its far side. Most players land on the
+  // ledge; hug the gum wall past it for Geoduck #1.
+  g.gumWall(41, 42, 3, 21);
+  g.plank(32, 37, 18);
+  g.lattes([33, 34, 35, 36], 17);
+  g.obj('geoduck', 39.5, 23, { props: { index: 0 } });
+  g.latte(40, 15); g.latte(40, 17); g.latte(40, 19);
+  // The low corridor (rows 22-25) under the buildings.
+  g.solid(31, 128, 26);
+  g.block(43, 96, 8, 21);
+  g.obj('enemy:cone', 46, 25);
+  g.obj('qblock', 52, 22, { props: { item: 'jacket' } }); // the Rain Jacket: throw Rain Drops (A) at the slug line
+  g.obj('enemy:slug', 58, 25, { props: { dir: -1 } });
+  g.obj('enemy:slug', 61, 25, { props: { dir: -1 } });
+  g.obj('enemy:slug', 64, 25, { props: { dir: -1 } });
+  g.gum(66, 69, 25);
+  g.obj('enemy:scooter', 69, 25);
+  g.lattes([54, 55, 56, 67, 68], 24);
+  g.obj('checkpoint', 72, 24, { w: 1, h: 2, name: 'cp1' });
+  // The theater's stage door (Down) — a hidden alcove with Geoduck #2.
+  g.prop('stagedoor', 77, 25, { h: 3.1 });
+  g.obj('door', 76.5, 24, { w: 1, h: 2, props: { target: 'alcove' } });
+  g.obj('player_spawn', 79, 25, { name: 'alcove_out' });
+  g.obj('enemy:cone', 81, 25);
+  // Joke screen: a tourist's selfie with the gum (gum wall backdrop, no collision).
+  g.gumDecor(83, 92, 22, 25);
+  g.prop('tourist', 87, 25, { h: 2.2 });
+  g.obj('enemy:scooter', 87, 25);
+  g.obj('enemy:cone', 90, 25);
+  g.obj('enemy:slug', 93, 25, { props: { dir: -1 } });
+  // The courtyard: climb back up on fire-escape landings (3 rows apart).
+  g.plank(98, 101, 23); g.plank(103, 106, 20); g.plank(98, 101, 17); g.plank(103, 106, 14);
+  g.plank(98, 101, 11);
+  g.lattes([99, 100], 22); g.lattes([104, 105], 19); g.lattes([99, 100], 16); g.lattes([104, 105], 13);
+  g.gumWall(129, 130, 0, 25);
+  g.obj('enemy:scooter', 104, 25);
+  // Sprint-jump off the tipped e-scooter for Geoduck #3 (the latte arc shows the way).
+  g.obj('bouncepad', 110, 24, { w: 1, h: 2, props: { style: 'scooter_pad' } });
+  g.latte(112, 20); g.latte(114, 17); g.latte(116, 15); g.latte(118, 15);
+  g.plank(118, 122, 17);
+  g.obj('geoduck', 120.5, 16, { props: { index: 2 } });
+  // Top right: the service elevator down to the waterfront.
+  g.plank(103, 128, 8);
+  g.lattes([110, 112, 114, 116], 7);
+  g.obj('exit', 123, 5, { w: 4, h: 3, props: { vehicle: 'elevator' } });
+  // The secret alcove (walled off; only the stage door leads here).
+  g.block(131, 139, 20, 21);
+  g.solid(131, 139, 26);
+  g.gumWall(139, 139, 22, 25);
+  g.obj('player_spawn', 133, 25, { name: 'alcove' });
+  g.obj('door', 132.5, 24, { w: 1, h: 2, props: { target: 'alcove_out' } });
+  g.prop('stagedoor', 133, 25, { h: 3.1 });
+  g.lattes([135, 136, 137, 138], 23);
+  g.obj('geoduck', 137, 24, { props: { index: 1 } });
+  writeFileSync(join(OUT, '2-2.tmj'), JSON.stringify(g.toJSON()));
+}
+
+// ------------------------------------------------------------------------------------
+// 2-3 "Waterfront Run" — 13 screens (347 tiles), gentle auto-chase. A seagull flock rolls in
+// from the left a little faster than you walk; it steals your power-up if it catches you and
+// hangs back while you're out on a side pier. Great Wheel gondolas, piers over the water.
+// Exit: leap onto the departing water taxi.
+// ------------------------------------------------------------------------------------
+{
+  const w = new MapBuilder(347, 15, { music: 'chase', parallaxSet: 'waterfront', timeLimit: 0, wind: 0, autoScroll: 0, par: 120, name: 'Waterfront Run' }, pierTileset);
+  const gap = (x0, x1) => w.water(x0, x1, 13);
+  w.obj('flock', -12, 4, { w: 1, h: 6 });
+  // Screen 1: Double Shot early — it feels great in a chase.
+  w.solid(0, 33, 12);
+  w.obj('player_spawn', 3, 11, { name: 'start' });
+  w.obj('qblock', 9, 8, { props: { item: 'doubleshot' } });
+  w.obj('sign', 14, 8, { w: 3, h: 4, props: { text: 'WATERFRONT\n→' } });
+  w.lattes([18, 19, 20, 21, 22], 10);
+  gap(34, 37);
+  w.lattes([34, 35, 36, 37], 9);
+  // Screen 2: the first Freeze, standing on the boardwalk staring at its phone.
+  w.solid(38, 85, 12);
+  w.obj('enemy:freeze', 47, 11);
+  w.lattes([52, 53, 54], 10);
+  // Screen 3: the Great Wheel. Geoduck #1 rides the bottom gondola.
+  w.obj('wheel', 61, 1.5, { w: 10, h: 8, props: { radius: 3.6, gondolas: 6, carryGeoduck: 0 } });
+  w.plank(74, 79, 4);
+  w.lattes([74, 75, 76, 77, 78, 79], 3);
+  // Screen 4: stairs up to the promenade; straight ahead, a dead-end side pier (the flock
+  // waits while you're on it) with Geoduck #2 at the very end.
+  w.plank(85, 87, 10);
+  w.plank(89, 113, 7);
+  w.solid(86, 104, 12);
+  w.obj('pier', 88, 10, { w: 17, h: 2 });
+  w.plank(95, 96, 10); w.plank(100, 101, 10);
+  w.obj('geoduck', 103, 11, { props: { index: 1 } });
+  w.lattes([92, 93, 94, 97, 98, 99], 11);
+  gap(105, 112);
+  w.lattes([106, 107, 108, 109, 110, 111], 6);
+  // Screen 5 (joke): the World's Largest Fry, and the gulls who worship it.
+  w.solid(113, 145, 12);
+  w.prop('fry', 122, 11, { h: 5.4 });
+  w.prop('seagull', 119, 11, { h: 0.9, atlas: 'enemies' });
+  w.prop('seagull', 125, 11, { h: 0.9, atlas: 'enemies', flip: true });
+  w.prop('seagull', 120.5, 11, { h: 0.9, atlas: 'enemies' });
+  w.obj('sign', 128, 8, { w: 3, h: 4, props: { text: "WORLD'S\nLARGEST\nFRY" } });
+  w.obj('enemy:cart', 140, 11, { props: { dir: -1 } });
+  // Screen 6: the Flannel, mid-run.
+  w.obj('qblock', 143, 8, { props: { item: 'flannel' } });
+  gap(146, 150);
+  w.plank(147, 149, 10);
+  w.solid(151, 195, 12);
+  w.lattes([153, 154, 155, 156], 10);
+  // Screen 7: Freeze #2 between two crate stacks.
+  w.obj('brick', 168, 11); w.obj('brick', 168, 10);
+  w.obj('enemy:freeze', 172, 11);
+  w.obj('brick', 176, 11); w.obj('brick', 176, 10);
+  w.lattes([167, 168, 175, 176], 8);
+  w.obj('checkpoint', 186, 10, { w: 1, h: 2, name: 'cp1' });
+  // Screen 8: water, then a runaway cart.
+  gap(196, 200);
+  w.plank(197, 199, 9);
+  w.solid(201, 260, 12);
+  w.obj('enemy:cart', 212, 11, { props: { dir: -1 } });
+  // Screen 9: the aquarium window — bump it from below for Geoduck #3.
+  w.obj('qblock', 226, 8, { props: { item: 'geoduck:2', style: 'aquarium' } });
+  w.lattes([223, 224, 228, 229], 10);
+  w.obj('pier', 236, 10, { w: 8, h: 2 });
+  w.lattes([237, 238, 239, 240, 241, 242], 11);
+  // Screens 10-12: piers and gaps, latte lines.
+  gap(261, 265);
+  w.plank(262, 264, 9);
+  w.solid(266, 300, 12);
+  w.lattes([270, 272, 274, 276, 278, 280], 10);
+  gap(301, 304);
+  w.lattes([301, 302, 303, 304], 9);
+  w.solid(305, 332, 12);
+  w.lattes([310, 311, 312, 313, 314, 315], 10);
+  w.obj('sign', 322, 8, { w: 3, h: 4, props: { text: 'WATER\nTAXI\n→' } });
+  // Screen 13: leap onto the departing water taxi.
+  gap(333, 346);
+  w.obj('exit', 335, 8, { w: 6, h: 4, props: { vehicle: 'watertaxi' } });
+  writeFileSync(join(OUT, '2-3.tmj'), JSON.stringify(w.toJSON()));
+}
+
+console.log('maps written: 1-1, 1-1-bonus, 1-2, 1-3, 2-1, 2-2, 2-3');

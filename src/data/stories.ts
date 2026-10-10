@@ -17,8 +17,8 @@ export interface Story {
   beats: StoryBeat[];
 }
 
-/** Panels under public/assets/story/, loaded at boot as `story:<name>`. */
-export const STORY_IMAGES = ['den', 'porch', 'truck', 'stump', 'locks_truck', 'herschel', 'goose_gang', 'postcard_w1'];
+/** The opening's panels (public/assets/story/), loaded at boot as `story:<name>`; every other cutscene loads its own. */
+export const STORY_IMAGES = ['den', 'porch', 'truck', 'stump'];
 
 export const STORIES: Record<string, Story> = {
   // The opening: Jimothy loses his gaze (a group of raccoons is a "gaze") while stuck under a
@@ -113,6 +113,86 @@ export const STORIES: Record<string, Story> = {
         focus: { x: 0.42, y: 0.55 },
         sfx: [{ name: 'honk', at: 2400 }],
         holdMs: 5800,
+      },
+    ],
+  },
+  // ---- World 2: Pike Place ------------------------------------------------------------------
+  // Clue (GDD §6): a fishmonger saw a crate marked LUXE.
+  '2-1': {
+    music: 'market',
+    beats: [
+      {
+        image: 'story:market',
+        caption: "The kayak drifted south all night. By morning:\nPike Place Market, where the fish fly.",
+        zoom: [1.0, 1.12],
+        focus: { x: 0.78, y: 0.62 },
+        holdMs: 5600,
+      },
+      {
+        image: 'story:fishmonger',
+        caption: 'A fishmonger had seen a crate stamped LUXE\nwheeled off through the market at dawn.',
+        zoom: [1.12, 1.0],
+        focus: { x: 0.35, y: 0.45 },
+        sfx: [{ name: 'whoosh', at: 600 }],
+        holdMs: 5800,
+      },
+      {
+        image: 'story:fishmonger',
+        caption: 'That way. Past the stalls, past the pig,\ndown the alley. Mind the crows.',
+        zoom: [1.05, 1.28],
+        focus: { x: 0.86, y: 0.5 },
+        holdMs: 5400,
+      },
+    ],
+  },
+  '2-2': {
+    music: 'alley',
+    beats: [
+      {
+        image: 'story:gumwall',
+        caption: 'Post Alley. The Gum Wall.\nA LUXE flyer, stuck fast in someone else\'s gum.',
+        zoom: [1.0, 1.14],
+        focus: { x: 0.32, y: 0.4 },
+        holdMs: 5800,
+      },
+      {
+        image: 'story:gumwall',
+        caption: 'And tiny paw prints in pink gum, leading down.\nJimothy would rather not. Jimothy goes anyway.',
+        zoom: [1.14, 1.04],
+        focus: { x: 0.72, y: 0.62 },
+        holdMs: 5800,
+      },
+    ],
+  },
+  '2-3': {
+    music: 'chase',
+    beats: [
+      {
+        image: 'story:waterfront',
+        caption: 'The waterfront. The crate was going onto\na water taxi at the end of the pier.',
+        zoom: [1.0, 1.15],
+        focus: { x: 0.72, y: 0.55 },
+        holdMs: 5400,
+      },
+      {
+        image: 'story:waterfront',
+        caption: 'Jimothy now smelled strongly of fish.\nThe seagulls had noticed.',
+        zoom: [1.2, 1.04],
+        focus: { x: 0.36, y: 0.58 },
+        sfx: [{ name: 'squawk', at: 1800 }],
+        holdMs: 5600,
+      },
+    ],
+  },
+  'postcard-w2': {
+    music: 'market',
+    beats: [
+      {
+        image: 'story:postcard_w2',
+        caption: 'Jimothy has acquired: a fish. He does not know why.',
+        zoom: [1.0, 1.06],
+        focus: { x: 0.5, y: 0.5 },
+        holdMs: 6000,
       },
     ],
   },

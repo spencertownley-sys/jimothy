@@ -74,6 +74,10 @@ const TRACKS: Record<string, Track> = {
   dusk: { bpm: 84, wave: 'sine', gain: 0.08, bass: [0, 9, 5, 7], arp: [[12, 16, 19, 16], [21, 24, 28, 24], [17, 21, 24, 21], [19, 23, 26, 23]] },
   // "Honk If You're Angry" – goose fight
   goose: { bpm: 160, wave: 'square', gain: 0.05, bass: [0, 3, 5, 3], arp: [[12, 15, 19, 15], [15, 19, 22, 19], [17, 20, 24, 20], [15, 19, 22, 19]] },
+  // "Fish Toss Shuffle" – World 2 market, 118 bpm walking bass
+  market: { bpm: 118, wave: 'triangle', gain: 0.08, bass: [0, 5, 7, 5], arp: [[12, 16, 19, 22], [17, 21, 24, 21], [19, 23, 26, 23], [17, 21, 24, 21]] },
+  alley: { bpm: 96, wave: 'sine', gain: 0.08, bass: [0, -2, -4, -5], arp: [[12, 15, 19, 15], [10, 14, 17, 14], [8, 12, 15, 12], [7, 11, 14, 11]] },
+  chase: { bpm: 160, wave: 'triangle', gain: 0.07, bass: [0, 0, 5, 7], arp: [[12, 19, 12, 19], [12, 19, 14, 21], [17, 24, 17, 24], [19, 26, 19, 26]] },
 };
 
 const A3 = 220;
@@ -103,6 +107,12 @@ const SAMPLE_SFX: Record<string, { file: string; gain: number }> = {
   truck: { file: 'sfx_truck', gain: 0.6 },
   honk: { file: 'sfx_honk', gain: 0.7 },
   splash: { file: 'sfx_splash', gain: 0.6 },
+  freeze: { file: 'sfx_freeze', gain: 0.45 },
+  horn: { file: 'sfx_horn', gain: 0.6 },
+  oink: { file: 'sfx_oink', gain: 0.7 },
+  caw: { file: 'sfx_caw', gain: 0.45 },
+  ding: { file: 'sfx_ding', gain: 0.6 },
+  whoosh: { file: 'sfx_whoosh', gain: 0.4 },
 };
 
 interface MusicFile {
@@ -112,6 +122,9 @@ interface MusicFile {
   lowpass?: number;
   rate?: number;
 }
+/** Fetched at boot; every other track loads on first use. */
+const EAGER_MUSIC = ['title', 'ballard', 'flannel'];
+
 const MUSIC_FILES: Record<string, MusicFile> = {
   title: { file: 'title', gain: 0.5 }, // "Pearl City Beach" – Paper Twins
   ballard: { file: 'ballard', gain: 0.42 }, // "Feel So Right" – Dag Anderson
@@ -119,6 +132,9 @@ const MUSIC_FILES: Record<string, MusicFile> = {
   drain: { file: 'ballard', gain: 0.38, lowpass: 650, rate: 0.94 },
   dusk: { file: 'dusk', gain: 0.42 }, // "Staycation" – Paper Twins
   goose: { file: 'goose', gain: 0.4 }, // "Gotta Catch That Unicorn" – Josef Bel Habib
+  market: { file: 'market', gain: 0.45 }, // "Back in a Jiffy" – Nocturnal Spirits
+  alley: { file: 'alley', gain: 0.45 }, // "Tomorrow I'll Be Gone" – Franz Gordon
+  chase: { file: 'chase', gain: 0.42 }, // "Late for an Appointment" – Stationary Sign
 };
 
 type LoadState = 'loading' | 'ready' | 'failed';
@@ -158,27 +174,39 @@ class AudioManagerImpl {
   }
 
   /**
-   * Fetch every audio file up front (no AudioContext needed). Decoding waits for unlock(),
-   * because Web Audio may only start after a user gesture.
+   * Fetch every sound effect and the World 1 music up front (no AudioContext needed). Other
+   * worlds' tracks are fetched the first time they're asked for (or prefetched when a level
+   * loads), so boot stays small. Decoding waits for unlock(): Web Audio may only start after a
+   * user gesture.
    */
   preload(base = 'assets/audio/'): void {
     this.base = base;
-    const files = new Set([...Object.values(SAMPLE_SFX).map((s) => s.file), ...Object.values(MUSIC_FILES).map((m) => m.file)]);
-    for (const file of files) {
-      if (this.loadState.has(file)) continue;
-      this.loadState.set(file, 'loading');
-      fetch(`${this.base}${file}.mp3`)
-        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((buf) => {
-          this.raw.set(file, buf);
-          this.decode(file);
-        })
-        .catch((err: unknown) => {
-          this.loadState.set(file, 'failed');
-          console.warn(`[audio] could not load ${file}.mp3 — using the synth fallback`, err);
-          this.onFileSettled(file);
-        });
+    const files = new Set([...Object.values(SAMPLE_SFX).map((s) => s.file), ...EAGER_MUSIC.map((k) => MUSIC_FILES[k].file)]);
+    for (const file of files) this.fetchFile(file);
+  }
+
+  /** Start fetching these music tracks now (a level calls this for its own track). */
+  prefetchMusic(...keys: string[]): void {
+    for (const k of keys) {
+      const f = MUSIC_FILES[k];
+      if (f) this.fetchFile(f.file);
     }
+  }
+
+  private fetchFile(file: string): void {
+    if (this.loadState.has(file)) return;
+    this.loadState.set(file, 'loading');
+    fetch(`${this.base}${file}.mp3`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((buf) => {
+        this.raw.set(file, buf);
+        this.decode(file);
+      })
+      .catch((err: unknown) => {
+        this.loadState.set(file, 'failed');
+        console.warn(`[audio] could not load ${file}.mp3 — using the synth fallback`, err);
+        this.onFileSettled(file);
+      });
   }
 
   private decode(file: string): void {
@@ -322,6 +350,7 @@ class AudioManagerImpl {
     const ctx = this.ctx;
     const file = key ? MUSIC_FILES[key] : undefined;
     // Recorded track still on its way: stay quiet (and keep the old track playing) until it lands.
+    if (file && !this.loadState.has(file.file)) this.fetchFile(file.file);
     if (ctx && file && this.loadState.get(file.file) === 'loading') return;
     const prev = this.current;
     this.current = null;

@@ -25,8 +25,13 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
   /** Hidden blocks are invisible and only solid from below until bumped (Mario's 1-up blocks). */
   hidden: boolean;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, item: string, hidden = false) {
-    super(scene, x, y, 'blocks', 'qblock');
+  /** Alternative art (the fish-ice display, the aquarium window); it dims instead of going dark. */
+  private styled: boolean;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, item: string, hidden = false, style = '') {
+    const styled = Boolean(style) && scene.textures.get('blocks').has(style);
+    super(scene, x, y, 'blocks', styled ? style : 'qblock');
+    this.styled = styled;
     this.item = item;
     this.hidden = hidden;
     scene.add.existing(this);
@@ -74,7 +79,8 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
       this.body.checkCollision.left = true;
       this.body.checkCollision.right = true;
     }
-    this.setFrame('qblock_used');
+    if (this.styled) this.setTint(0x8a8a8a);
+    else this.setFrame('qblock_used');
     this.body.setSize(CONFIG.TILE, CONFIG.TILE);
     this.pulse?.stop();
     if (this.glow) this.preFX?.remove(this.glow);

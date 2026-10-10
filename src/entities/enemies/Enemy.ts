@@ -23,6 +23,8 @@ export interface EnemyContext {
   /** the mini-boss is down: open the arena, drop the reward */
   bossDefeated(boss: Enemy): void;
   shake(ms: number, intensity: number): void;
+  /** market crows: any latte this box touches is gone */
+  stealLattes(left: number, top: number, right: number, bottom: number): void;
 }
 
 /** Base enemy: walker by default. Subclasses override `behave`. */

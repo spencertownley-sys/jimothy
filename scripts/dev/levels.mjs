@@ -15,6 +15,9 @@ await page.waitForFunction(() => window.__jimothy?.activeScenes().includes('Titl
 const T = 48;
 const POIS = {
   '1-2': [['quay', 8, 12], ['crow', 36, 12], ['gate1', 62, 9], ['gauntlet', 74, 9], ['slug', 92, 12], ['gate2', 118, 9], ['herschel', 146, 12], ['ladder1', 172, 11], ['ladder2', 190, 8], ['dock', 197, 11], ['canal', 226, 9], ['exit', 276, 12]],
+  '2-1': [['arcade', 8, 11], ['toss', 33, 11], ['freeze', 60, 11], ['longtoss', 88, 11], ['upper', 93, 3], ['dahlias', 113, 11], ['pig', 141, 9], ['icebox', 195, 11], ['sanitary', 250, 6], ['exit', 304, 11]],
+  '2-2': [['top', 8, 7], ['drop', 36, 17], ['corridor', 50, 25], ['door', 76, 25], ['alcove', 134, 25], ['courtyard', 102, 22], ['scooterpad', 109, 25], ['elevator', 118, 7]],
+  '2-3': [['start', 8, 11], ['freeze', 44, 11], ['wheel', 64, 11], ['sidepier', 100, 11], ['fry', 120, 11], ['crates', 166, 11], ['aquarium', 225, 11], ['taxi', 330, 11]],
   '1-3': [['beach', 8, 11], ['cart', 36, 11], ['dip', 62, 13], ['seesaw', 90, 8], ['roof', 101, 6], ['bonfires', 118, 11], ['inlet', 146, 8], ['ledges', 172, 6], ['arena', 222, 11], ['exit', 254, 11]],
 };
 for (const [lvl, pois] of Object.entries(POIS)) {

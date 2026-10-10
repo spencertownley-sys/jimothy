@@ -266,7 +266,7 @@ cutfill $BP 401x310+1604+427 $OUT/props/stones.png     -resize x52
 # ---- Tilesets: locks (concrete lock wall + dock) and beach (sand + driftwood) ---------------
 # Same grid as ballard (8 columns, 48 px, 1 px extrusion). 16 tiles each:
 #   1-4 surface top · 5-8 body · 9-10 one-way platform · 11-14 deep body · 15 hazard-free blank · 16 blank
-tileset() { # tileset <name> <surface-src> <platform-src> <platform-geo> [rows of sky to drop]
+tileset() { # tileset <name> <surface-src> <platform-src> <platform-geo> [rows of sky to drop] [wall-src]
   local name="$1" surf="$2" plat="$3" pgeo="$4" D=$TMP/ts_$1
   mkdir -p $D
   convert "$surf" -crop "2048x$((869-${5:-0}))+0+${5:-0}" +repage -resize x192 -crop 96x192+60+0 +repage $TMP/surf96.png
@@ -283,6 +283,15 @@ tileset() { # tileset <name> <surface-src> <platform-src> <platform-geo> [rows o
   crop48 $TMP/plat.png 48 0 $D/10.png
   convert -size 48x48 xc:none $D/15.png
   convert -size 48x48 xc:none $D/16.png
+  # optional third row: 17-20 a 2x2 wall patch (the sticky gum wall), 21 a gum splat hazard
+  if [ -n "${6:-}" ]; then
+    convert "$6" -resize 192x192 -crop 96x96+48+48 +repage $TMP/wall96.png
+    crop48 $TMP/wall96.png 0 0 $D/17.png; crop48 $TMP/wall96.png 48 0 $D/18.png
+    crop48 $TMP/wall96.png 0 48 $D/19.png; crop48 $TMP/wall96.png 48 48 $D/20.png
+    convert $OUT/blocks/slime.png -modulate 105,150,50 -resize 46x16! $TMP/gumsplat.png
+    convert -size 48x48 xc:none $TMP/gumsplat.png -gravity south -geometry +0+1 -composite $D/21.png
+    for i in 22 23 24; do convert -size 48x48 xc:none $D/$i.png; done
+  fi
   for f in $D/[0-9][0-9].png; do
     convert "$f" -set option:distort:viewport 50x50-1-1 -virtual-pixel edge -distort SRT 0 +repage "$f"
   done
@@ -313,6 +322,65 @@ convert $TMP/dm_k.png -trim +repage -resize x380 $TMP/dm.png
 mirror $TMP/dm.png $BG/bg_beach_mid.png
 # ---- Story panels: 1-2 and 1-3 cutscenes, World 1 postcard ---------------------------------
 for pair in 60:locks_truck 61:herschel 62:goose_gang 63:postcard_w1; do
+  n=${pair%%:*}; name=${pair#*:}
+  f=$(ls $HF/${n}_*.jpg)
+  convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$name.jpg
+done
+
+# ======================================================================================
+# World 2 — Pike Place: 2-1 Market Arcade, 2-2 The Gum Wall, 2-3 Waterfront Run (70-94)
+# ======================================================================================
+# ---- Enemies -------------------------------------------------------------------------------
+cutfill $HF/82_freeze_sheet.jpg 350x919+202+133 $OUT/enemies/freeze_idle.png -resize x96
+cutfill $HF/82_freeze_sheet.jpg 349x949+707+122 $OUT/enemies/freeze_thaw.png -resize x98
+cutfill $HF/83_scooter_sheet.jpg 849x649+88+261 $OUT/enemies/scooter_run.png -resize x58
+cutfill $HF/88_seagull_flock.jpg 1622x1004+169+98 $OUT/enemies/flock.png -resize x300
+# ---- Mechanisms and vehicles (blocks atlas) -------------------------------------------------
+cutfill $HF/82_freeze_sheet.jpg 777x488+1174+416 $OUT/blocks/frost_ring.png -resize 220x
+cutfill $HF/83_scooter_sheet.jpg 739x273+1108+642 $OUT/blocks/scooter_pad.png -resize 110x
+cutfill $HF/80_market_stalls.jpg 481x606+861+257 $OUT/blocks/dahlia.png -resize x84
+cutfill $HF/80_market_stalls.jpg 510x438+1437+435 $OUT/blocks/crate.png -resize '48x48!'
+cutfill $HF/80_market_stalls.jpg 674x579+93+321 $OUT/blocks/icebox.png -resize 72x
+cutfill $HF/86_waterfront_props.jpg 525x472+757+450 $OUT/blocks/aquarium.png -resize 64x
+cutfill $HF/81_brass_pig.jpg 1082x916+485+152 $OUT/blocks/pig.png -resize x110
+cutfill $HF/86_waterfront_props.jpg 510x569+1372+373 $OUT/blocks/handtruck.png -resize x110
+cutfill $HF/87_water_taxi.jpg 1110x434+487+299 $OUT/blocks/watertaxi.png -resize x140
+cutfill $HF/84_alley_props.jpg 523x721+581+209 $OUT/blocks/elevator.png -resize x150
+cutfill $HF/85_great_wheel.jpg 560x540+1250+320 $OUT/blocks/gondola.png -resize 96x
+cutfill $HF/79_fishmonger.jpg 542x1023+387+67 $OUT/blocks/fishmonger_throw.png -resize x150
+cutfill $HF/79_fishmonger.jpg 620x1080+1200+60 $OUT/blocks/fishmonger_catch.png -resize x150
+# ---- Props ----------------------------------------------------------------------------------
+cutfill $HF/85_great_wheel.jpg 786x971+227+83 $OUT/props/wheel.png -resize x480
+cutfill $HF/86_waterfront_props.jpg 403x806+196+138 $OUT/props/fry.png -resize x260
+cutfill $HF/84_alley_props.jpg 520x777+39+157 $OUT/props/stagedoor.png -resize x150
+cutfill $HF/84_alley_props.jpg 322x582+1105+346 $OUT/props/tourist.png -resize x110
+cutfill $HF/84_alley_props.jpg 577x441+1431+484 $OUT/props/crownest.png -resize x60
+cutfill $HF/80_market_stalls.jpg 674x579+93+321 $OUT/props/fishstall.png -resize x110
+# ---- Tilesets: market (2-1), alley with the sticky gum wall (2-2), pier (2-3) ---------------
+tileset market $HF/73_market_floor_tex.jpg $HF/64_dock_planks.jpg 1600x230+200+350 30
+tileset alley $HF/75_cobble_alley_tex.jpg $HF/64_dock_planks.jpg 1600x230+200+350 110 $HF/74_gum_wall_tex.jpg
+tileset pier $HF/78_boardwalk_tex.jpg $HF/78_boardwalk_tex.jpg 1600x120+200+135 130
+# ---- Parallax --------------------------------------------------------------------------
+convert $HF/70_pike_far.jpg -resize x720 $TMP/pf.png; mirror $TMP/pf.png $TMP/pf2.png
+convert $TMP/pf2.png -quality 84 $BG/bg_pike_far.jpg
+keygrey() { # keygrey <src> <out> <height> [sample-x sample-y]: global key of the flat grey
+  local bg; bg=$(convert "$1" -format "%[pixel:p{${4:-2040},${5:-5}}]" info:)
+  convert "$1" -alpha set -fuzz 8% -transparent "$bg" -trim +repage -resize "x$3" $TMP/kg.png
+  mirror $TMP/kg.png "$2"
+}
+# the market facade has the neon sign on it, so no mirroring (it would read backwards) and only
+# the outer grey is keyed (flood fill), not grey shades inside the buildings
+pbg=$(convert $HF/71_pike_mid.jpg -format '%[pixel:p{5,5}]' info:)
+convert $HF/71_pike_mid.jpg -alpha set -fuzz 6% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -draw "matte 1024,2 floodfill" \
+  -fuzz 2.5% -transparent "$pbg" -trim +repage -resize x420 $BG/bg_pike_mid.png
+keygrey $HF/72_pike_near.jpg $BG/bg_pike_near.png 240
+keygrey $HF/76_alley_mid.jpg $BG/bg_alley_mid.png 460 1024 5
+keygrey $HF/77_waterfront_mid.jpg $BG/bg_waterfront_mid.png 400
+# World 2 map (Pike Place and the waterfront only)
+convert $HF/89_map_pike.jpg -resize '1280x720!' -quality 86 $BG/map_pike.jpg
+# ---- Story panels -------------------------------------------------------------------------------
+for pair in 90:market 91:fishmonger 92:gumwall 93:waterfront 94:postcard_w2; do
   n=${pair%%:*}; name=${pair#*:}
   f=$(ls $HF/${n}_*.jpg)
   convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$name.jpg

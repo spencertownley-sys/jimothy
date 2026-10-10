@@ -7,7 +7,7 @@ import { COLORS, uiText } from '../ui/text';
 
 const ATLASES = ['jimothy', 'enemies', 'items', 'blocks', 'ui', 'props'];
 
-/** Loads the World 1 pack: atlases, backgrounds, tileset, maps. Everything else lazy-loads later. */
+/** Loads the boot pack: atlases, 1-1's tileset and backgrounds, the opening's panels, World 1 maps. Everything else lazy-loads (levels/worlds.ts). */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: 'Boot' });
@@ -26,21 +26,16 @@ export class BootScene extends Phaser.Scene {
 
     this.load.setPath('assets');
     for (const a of ATLASES) this.load.atlas(a, `atlases/${a}.png`, `atlases/${a}.json`);
-    for (const t of ['ballard', 'locks', 'beach']) this.load.image(`tiles:${t}`, `tilesets/${t}.png`);
+    this.load.image('tiles:ballard', 'tilesets/ballard.png');
     this.load.image('bg:ballard_far', 'backgrounds/bg_ballard_far.jpg');
     this.load.image('bg:ballard_mid', 'backgrounds/bg_ballard_mid.png');
     this.load.image('bg:ballard_near', 'backgrounds/bg_ballard_near.png');
-    this.load.image('bg:locks_far', 'backgrounds/bg_locks_far.jpg');
-    this.load.image('bg:locks_mid', 'backgrounds/bg_locks_mid.png');
-    this.load.image('bg:beach_far', 'backgrounds/bg_beach_far.jpg');
-    this.load.image('bg:beach_mid', 'backgrounds/bg_beach_mid.png');
-    this.load.image('bg:water', 'backgrounds/water.png');
-    this.load.image('bg:water_dusk', 'backgrounds/water_dusk.png');
     this.load.image('bg:title', 'backgrounds/title_keyart.jpg');
     this.load.image('bg:worldmap', 'backgrounds/worldmap.jpg');
     this.load.image('bg:map_ballard', 'backgrounds/map_ballard.jpg');
     for (const s of STORY_IMAGES) this.load.image(`story:${s}`, `story/${s}.jpg`);
-    for (const lvl of LEVELS) if (lvl.file) this.load.tilemapTiledJSON(`map:${lvl.id}`, `maps/${lvl.file}`);
+    // World 1 only; later worlds load when you get there (see levels/worlds.ts)
+    for (const lvl of LEVELS) if (lvl.file && lvl.world === 1) this.load.tilemapTiledJSON(`map:${lvl.id}`, `maps/${lvl.file}`);
   }
 
   create(): void {
