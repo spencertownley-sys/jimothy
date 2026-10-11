@@ -50,7 +50,7 @@ const tileset = {
 
 // World 1 lock-wall and beach tilesets (scripts/gen-art.sh `tileset`): 16 tiles each.
 //   1-4 surface · 5-8 body · 9-10 one-way plank · 11-14 deep body · 15 invisible one-way · 16 blank
-const W1 = { TOP: 1, BODY: 5, PLANK: 9, DEEP: 11, GHOST: 15, WALL: 17, GUM: 21 };
+const W1 = { TOP: 1, BODY: 5, PLANK: 9, DEEP: 11, GHOST: 15, BLANK: 16, WALL: 17, GUM: 21 };
 const smallTileset = (name, extra = [], rows = 2) => ({
   firstgid: 1,
   name,
@@ -78,6 +78,8 @@ const alleyTileset = smallTileset('alley', [
   { id: W1.GUM - 1, properties: [{ name: 'hazard', type: 'string', value: 'gum' }] },
 ], 3);
 const pierTileset = smallTileset('pier');
+// World 3: the wet plaza paving is a little slippery (3-1, the 3-2 stations); 3-3 reuses the alley cobbles
+const plazaTileset = smallTileset('plaza', [0, 1, 2, 3].map((i) => ({ id: W1.TOP - 1 + i, properties: [{ name: 'surface', type: 'string', value: 'wet' }] })));
 
 const propList = (props) =>
   Object.entries(props).map(([k, v]) => ({
@@ -156,12 +158,12 @@ class MapBuilder {
    * Decor sprite from the `props` atlas. (tx, bottomRow) is the tile the sprite stands on top of
    * the bottom of; `h` is its height in tiles (width follows the image unless `stretch`).
    */
-  prop(sprite, tx, bottomRow, { h = 1, w = 1, front = false, stretch = false, align = 'bottom', dx = 0, atlas = 'props', flip = false } = {}) {
+  prop(sprite, tx, bottomRow, { h = 1, w = 1, front = false, stretch = false, align = 'bottom', dx = 0, atlas = 'props', flip = false, alpha = 1 } = {}) {
     const bottom = (bottomRow + 1) * T;
     this.objects.push({
       id: this.nextId++, name: sprite, type: 'prop', visible: true, rotation: 0,
       x: tx * T + (T - w * T) / 2 + dx * T, y: bottom - h * T, width: w * T, height: h * T,
-      properties: propList({ sprite, front, stretch, align, ...(atlas !== 'props' ? { atlas } : {}), ...(flip ? { flip } : {}) }),
+      properties: propList({ sprite, front, stretch, align, ...(atlas !== 'props' ? { atlas } : {}), ...(flip ? { flip } : {}), ...(alpha !== 1 ? { alpha } : {}) }),
     });
   }
   cedar(x, h = 9) {
@@ -191,6 +193,10 @@ class MapBuilder {
   /** Gum blobs on the floor of row `row` (slippery, like slug slime). */
   gum(x0, x1, row) {
     for (let x = x0; x <= x1; x++) this.set('hazards', x, row, W1.GUM);
+  }
+  /** Invisible solid (the inside of a prop that should collide: the museum the monorail runs through). */
+  wall(x0, x1, y0, y1) {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('ground', x, y, W1.BLANK);
   }
   clear(x0, x1, y0, y1) {
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set('ground', x, y, 0);
@@ -781,4 +787,267 @@ writeFileSync(join(OUT, '1-1-bonus.tmj'), JSON.stringify(b.toJSON()));
   writeFileSync(join(OUT, '2-3.tmj'), JSON.stringify(w.toJSON()));
 }
 
-console.log('maps written: 1-1, 1-1-bonus, 1-2, 1-3, 2-1, 2-2, 2-3');
+// ------------------------------------------------------------------------------------
+// 3-1 "Fountain Plaza" — 11 screens (293 tiles), Seattle Center at night. Fountain jets fire on
+// a 2 s cycle and launch you up; the wet paving slides a little. Freezes come in pairs now.
+// Exit: the monorail station.
+// ------------------------------------------------------------------------------------
+{
+  const f = new MapBuilder(293, 15, { music: 'needle', parallaxSet: 'center', timeLimit: 0, wind: 0, autoScroll: 0, par: 120, name: 'Fountain Plaza' }, plazaTileset);
+  const jet = (x, phase = 0, height = 5, w = 1) => f.obj('geyser', x - (w - 1) / 2, 11, { w, props: { phase, height } });
+  const lamp = (x, h = 5.4) => f.prop('lamp', x, 11, { h });
+  // Screen 1: the plaza. One jet on flat ground with a latte column showing how high it goes.
+  f.solid(0, 40, 12);
+  f.obj('player_spawn', 2, 11, { name: 'start' });
+  f.obj('sign', 6, 8, { w: 3.4, h: 4, props: { text: 'SEATTLE CENTER\nfountain jets\nlaunch you ↑' } });
+  lamp(11);
+  jet(16, 0);
+  f.lattes([16], 10); f.lattes([16], 9); f.lattes([16], 8); f.lattes([16], 7);
+  lamp(21);
+  f.plank(23, 27, 7);
+  f.lattes([23, 24, 25, 26, 27], 6);
+  jet(30, 600);
+  // Screen 2: the first Freeze pair, "the line", on flat ground with room to back off.
+  f.obj('qblock', 35, 8, { props: { item: 'teriyaki' } });
+  // a jet at the lip of the pit is the way across
+  f.solid(41, 41, 12);
+  jet(41, 0);
+  f.solid(46, 80, 12);
+  f.obj('enemy:freeze', 52, 11);
+  f.obj('enemy:freeze', 54, 11, { props: { phase: 500 } });
+  f.lattes([52, 53, 54], 7);
+  f.lattes([42, 43], 6);
+  // Screen 3: crows on patrol, a cone, platforms.
+  f.obj('enemy:crow', 62, 11, { props: { dir: -1 } });
+  f.plank(60, 65, 8);
+  f.lattes([60, 61, 62, 63, 64, 65], 7);
+  f.obj('enemy:cone', 70, 11, { props: { dir: -1 } });
+  lamp(75);
+  f.obj('enemy:crow', 78, 11, { props: { dir: -1 } });
+  // Screen 4: the triple geyser rides you all the way up to the lamp wire — Geoduck #1.
+  f.solid(81, 108, 12);
+  lamp(86, 9); lamp(102, 9);
+  f.plank(87, 101, 3);
+  f.lattes([88, 89, 90, 91, 96, 97, 98], 2);
+  f.obj('geoduck', 100, 2, { props: { index: 0 } });
+  jet(94, 0, 9, 3);
+  f.lattes([94], 9); f.lattes([94], 7); f.lattes([94], 5);
+  f.obj('sign', 89, 8, { w: 3, h: 4, props: { text: 'TRIPLE\nFOUNTAIN\n(hold jump)' } });
+  // Screen 5: Rain Jacket, then a cone and a run of jets over a gap.
+  f.obj('qblock', 111, 8, { props: { item: 'jacket' } });
+  f.solid(109, 117, 12);
+  f.obj('enemy:cone', 115, 11, { props: { dir: -1 } });
+  f.solid(121, 122, 12); jet(121.5, 0, 5, 2);
+  f.solid(126, 127, 12); jet(126.5, 1000, 5, 2);
+  f.lattes([119, 120, 123, 124, 125], 7);
+  f.solid(131, 160, 12);
+  // Screen 6 (joke): kids splashing in a fountain at midnight, the parent on their phone, smiling.
+  f.prop('fountainkids', 141, 11, { h: 4.1 });
+  f.obj('sign', 135, 8, { w: 3, h: 4, props: { text: 'IT IS\n12:04 AM' } });
+  f.lattes([148, 149, 150, 151], 10);
+  f.obj('enemy:freeze', 154, 11);
+  f.obj('enemy:freeze', 156, 11, { props: { phase: 1500 } });
+  f.plank(152, 158, 7);
+  f.lattes([152, 153, 154, 155, 156, 157, 158], 6);
+  // Screen 7: checkpoint (~55%), then the glass sculpture garden: crouch through the glowing
+  // tube — Geoduck #2 is inside, behind the glass.
+  f.obj('checkpoint', 162, 10, { w: 1, h: 2, name: 'cp1' });
+  f.solid(161, 200, 12);
+  f.block(172, 184, 8, 11);
+  f.clear(172, 184, 11, 11);
+  f.prop('glasstube', 178, 11, { h: 1.3, w: 13, stretch: true, front: true, alpha: 0.72 });
+  f.prop('lamp', 172, 7, { h: 3 }); f.prop('lamp', 184, 7, { h: 3 });
+  f.lattes([174, 176, 180, 182], 11);
+  f.obj('geoduck', 178, 11.25, { props: { index: 1 } });
+  f.obj('sign', 168.5, 8, { w: 3, h: 4, props: { text: 'GLASS\nGARDEN\n↓ duck' } });
+  // a jet up onto the garden's roof for the lattes, clear of the tube's mouth
+  jet(165, 0, 6);
+  f.lattes([173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183], 7);
+  // Screen 8: Freezes and crows, then stepping-stone islands with jets.
+  f.obj('enemy:freeze', 190, 11, { props: { phase: 0 } });
+  f.obj('enemy:freeze', 192, 11, { props: { phase: 400 } });
+  f.obj('enemy:crow', 200, 11, { props: { dir: -1 } });
+  f.solid(204, 205, 12); jet(204.5, 0, 6, 2);
+  f.solid(209, 210, 12); jet(209.5, 700, 6, 2);
+  f.solid(214, 215, 12); jet(214.5, 1400, 6, 2);
+  f.lattes([202, 207, 212, 217], 6);
+  // Screen 9: the base of the Needle — a hidden block at its leg (Geoduck #3).
+  f.solid(219, 292, 12);
+  f.obj('sign', 225, 8, { w: 3, h: 4, props: { text: 'THE NEEDLE\n↑\n605 FT' } });
+  f.obj('qblock', 231, 8, { props: { item: 'geoduck:2', hidden: true } });
+  f.lattes([234, 235, 236], 10);
+  f.obj('enemy:crow', 240, 11, { props: { dir: -1 } });
+  f.obj('enemy:cone', 247, 11, { props: { dir: -1 } });
+  // Screens 10-11: last jets, then the monorail station — doors open.
+  jet(253, 0); jet(258, 500);
+  f.plank(255, 256, 7);
+  f.lattes([253, 255, 256, 258], 6);
+  lamp(264); lamp(272);
+  f.lattes([266, 267, 268, 269, 270], 10);
+  f.obj('sign', 276, 8, { w: 3, h: 4, props: { text: 'MONORAIL\n→' } });
+  f.obj('exit', 284, 9, { w: 4, h: 3, props: { vehicle: 'station' } });
+  writeFileSync(join(OUT, '3-1.tmj'), JSON.stringify(f.toJSON()));
+}
+
+// ------------------------------------------------------------------------------------
+// 3-2 "Monorail" — auto-scroller, 14 screens (373 tiles). The camera rides along at 140 px/s
+// with the train; its roof is the floor. Duck the signal gantries, hop over the museum the
+// line runs through, dodge diving crows. Falling (or getting left behind) is a lost life; no
+// checkpoint. Exit: Westlake station.
+// ------------------------------------------------------------------------------------
+{
+  const m = new MapBuilder(373, 15, { music: 'monorail', parallaxSet: 'monorail', timeLimit: 0, wind: 0, autoScroll: 140, par: 140, name: 'Monorail' }, plazaTileset);
+  const ROOF = 9; // the roof top is the top of row 9
+  // a gantry's underside sits 34 px over the roof: standing hits it, crouching slips under
+  const gantry = (x, w = 3) => m.obj('gantry', x, ROOF - (34 + 40) / T, { w, h: 40 / T });
+  const museum = (x0, x1) => {
+    m.wall(x0, x1, ROOF - 2, ROOF - 1);
+    m.prop('wavyroof', (x0 + x1) / 2, ROOF - 1, { h: 2.15, w: x1 - x0 + 1.6, stretch: true });
+  };
+  // the train (its rear starts ~300 px off-screen), the starting station, and the beam track
+  m.obj('monorail', -300 / T, ROOF, { w: 1000 / T, h: 4.4, props: { stopAt: 360, revealAt: 306, carryGeoduck: 2 } });
+  // its deck (27% up the art) lines up with the train roof
+  m.prop('station', 4, ROOF + 0.25, { h: 4.67, atlas: 'blocks' });
+  m.obj('player_spawn', 8, ROOF - 1, { name: 'start' });
+  for (let x = -4; x < 373; x += 4) m.prop('beam', x, 14, { h: 1.9 });
+  // Screen 1-2: lattes on the roof, then the first gantry. Jump *over* it for Geoduck #1.
+  m.lattes([24, 26, 28, 30], ROOF - 1);
+  m.obj('sign', 30, 2, { w: 3, h: 3.4, props: { text: 'DUCK ↓\nfor\ngantries' } });
+  gantry(42);
+  m.obj('geoduck', 43, 4, { props: { index: 0 } });
+  m.lattes([41, 42, 44, 45], 5);
+  m.obj('qblock', 56, 5, { props: { item: 'doubleshot' } });
+  m.obj('enemy:crow', 70, 2, { props: { dive: true } });
+  gantry(78);
+  m.obj('enemy:seagull', 92, 6, { props: { swoop: true, dir: -1, speedMul: 1.6 } });
+  m.lattes([86, 87, 88, 89], 7);
+  // Screens 4-5: the line runs through the museum. Hop up onto its wavy roof and run along it;
+  // the detour up top holds Geoduck #2.
+  museum(104, 132);
+  m.lattes([106, 108, 110, 112, 126, 128, 130], ROOF - 3);
+  m.plank(114, 122, 3);
+  m.lattes([114, 115, 116, 120, 121, 122], 2);
+  m.obj('geoduck', 118, 2, { props: { index: 1 } });
+  m.obj('enemy:crow', 125, 1, { props: { dive: true } });
+  gantry(146);
+  m.obj('enemy:crow', 156, 2, { props: { dive: true } });
+  // Screen 6 (joke): SEATTLE'S BEST WORST TRAFFIC. The billboards are a high road with lattes.
+  m.prop('billboard', 172, ROOF, { h: 3.8 });
+  m.ghost(170, 174, 6);
+  m.lattes([170, 171, 172, 173, 174], 5);
+  m.prop('billboard', 184, ROOF, { h: 3.8 });
+  m.ghost(182, 186, 6);
+  m.lattes([182, 184, 186], 5);
+  // Screen 7: the Flannel, mid-ride (no checkpoint on an auto-scroller).
+  m.obj('qblock', 194, 5, { props: { item: 'flannel' } });
+  m.obj('enemy:seagull', 204, 6, { props: { swoop: true, dir: -1, speedMul: 1.6 } });
+  // Screens 8-9: a run of gantries under an elevated bike lane. Crouch the whole way, or take
+  // the lane — where the rogue scooters ride.
+  m.plank(214, 252, 6);
+  m.lattes([218, 222, 226, 230, 234, 238, 242, 246], 5);
+  for (const x of [218, 224, 230, 236, 242]) gantry(x);
+  m.obj('enemy:scooter', 236, 5);
+  m.obj('enemy:scooter', 252, 5);
+  m.obj('enemy:crow', 262, 1, { props: { dive: true } });
+  m.obj('enemy:seagull', 268, 6, { props: { swoop: true, dir: -1, speedMul: 1.6 } });
+  // Screen 10-11: crates left on the track — jump them like hurdles.
+  for (const x of [280, 288, 296]) {
+    m.obj('brick', x, ROOF - 1, { props: { style: 'crate' } });
+    m.lattes([x], ROOF - 3);
+  }
+  m.obj('enemy:crow', 292, 1, { props: { dive: true } });
+  m.obj('enemy:seagull', 300, 6, { props: { swoop: true, dir: -1, speedMul: 1.6 } });
+  // Screens 12-13: the last straight. The train pulls ahead: its rear window (Geoduck #3)
+  // comes into view at the back of the car.
+  m.obj('sign', 316, 2, { w: 3, h: 3.4, props: { text: '← check\nthe back\nof the car' } });
+  m.obj('enemy:crow', 330, 1, { props: { dive: true } });
+  m.lattes([336, 338, 340, 342], ROOF - 1);
+  // Screen 14: Westlake station.
+  m.solid(360, 372, ROOF);
+  m.obj('sign', 362, ROOF - 4, { w: 3, h: 3.4, props: { text: 'WESTLAKE\n→' } });
+  m.obj('exit', 367, ROOF - 3, { w: 4, h: 3, props: { vehicle: 'station' } });
+  writeFileSync(join(OUT, '3-2.tmj'), JSON.stringify(m.toJSON()));
+}
+
+// ------------------------------------------------------------------------------------
+// 3-3 "The Line" — gauntlet, 9 screens (240 tiles). A queue for the hottest restaurant in
+// town: Freezes pulsing in a wave. Travel above on the awnings; when it rains (every 6 s) the
+// tourists' umbrellas pop open as stepping stones. Rain Drops thaw a Freeze for 3 s.
+// Exit: the restaurant's back door.
+// ------------------------------------------------------------------------------------
+{
+  const l = new MapBuilder(240, 15, { music: 'line', parallaxSet: 'line', timeLimit: 0, wind: 0, autoScroll: 0, par: 105, name: 'The Line' }, alleyTileset);
+  let n = 0;
+  // the queue pulses front-to-back like a wave
+  const fz = (x, props = {}) => l.obj('enemy:freeze', x, 11, { props: { phase: (n++ % 5) * 380, ...props } });
+  // every tourist in the line has an umbrella ready (it only opens in the rain)
+  const umbrella = (x) => l.obj('umbrella', x - 1.06, 8.55, { w: 2.1, h: 2.4 });
+  const awning = (x0, x1) => {
+    l.ghost(x0, x1, 8);
+    l.prop('awning', (x0 + x1) / 2, 9.2, { h: 2.2, w: x1 - x0 + 1.4, stretch: true });
+  };
+  l.solid(0, 239, 12);
+  l.obj('player_spawn', 2, 11, { name: 'start' });
+  // Screen 1: the Rain Jacket first — you'll want Rain Drops.
+  l.obj('qblock', 7, 8, { props: { item: 'jacket' } });
+  l.obj('sign', 11, 8, { w: 3.4, h: 4, props: { text: 'THE LINE\nstarts here\n(the wait: yes)' } });
+  // Screen 1-2: the queue begins. Awnings over it; gaps you can jump.
+  fz(20); fz(23); fz(26);
+  awning(17, 22); awning(26, 31);
+  l.lattes([18, 19, 20, 21, 27, 28, 29, 30], 7);
+  umbrella(24.5);
+  fz(32); fz(35);
+  // Screen 3: a long gap between awnings: wait for the rain and hop the umbrellas.
+  awning(36, 40);
+  umbrella(43); umbrella(47);
+  fz(43); fz(47);
+  awning(50, 56);
+  l.obj('enemy:crow', 54, 7, { props: { dir: -1 } });
+  l.lattes([42, 43, 44, 46, 47, 48], 6);
+  fz(52); fz(55);
+  // Geoduck #2: under an awning, between two Freezes — drop in between pulses
+  l.obj('geoduck', 58.5, 11, { props: { index: 1 } });
+  fz(61);
+  awning(60, 66);
+  // Screen 4-5: more queue; the midpoint Freeze with a geoduck for whoever thaws her 3 times.
+  fz(65); fz(69);
+  umbrella(69);
+  awning(72, 78);
+  l.obj('sign', 82, 8, { w: 3, h: 4, props: { text: 'waiting\nsince\nlunch' } });
+  fz(86, { gift: 2 });
+  l.lattes([84, 85, 87, 88], 11);
+  // a break in the line where it turns the corner: the checkpoint
+  l.obj('checkpoint', 95, 10, { w: 1, h: 2, name: 'cp1' });
+  l.lattes([96, 97, 98, 99, 100], 10);
+  // Screen 6-7: the busiest stretch. Crows on the awnings.
+  fz(106); fz(109); fz(112);
+  awning(104, 110);
+  umbrella(113.5);
+  awning(117, 123);
+  l.obj('enemy:crow', 121, 7, { props: { dir: -1 } });
+  fz(118); fz(121); fz(124);
+  umbrella(127); umbrella(131);
+  fz(127); fz(131);
+  awning(134, 141);
+  l.lattes([126, 127, 128, 130, 131, 132], 6);
+  l.obj('enemy:crow', 139, 7, { props: { dir: -1 } });
+  fz(137); fz(140);
+  umbrella(144.5);
+  awning(148, 154);
+  l.lattes([149, 150, 151, 152, 153], 7);
+  fz(146); fz(150); fz(153);
+  // Screen 8 (joke): the wait board.
+  l.obj('sign', 162, 8, { w: 3.4, h: 4, props: { text: 'CURRENT\nWAIT\n40 MIN' } });
+  awning(166, 172);
+  fz(168); fz(171);
+  // Screen 9: the front of the line — SOLD OUT (Geoduck #1 behind the easel), then the alley
+  // and the back door the crate went through.
+  l.prop('soldout', 185, 11, { h: 3.5 });
+  l.obj('geoduck', 186, 11, { props: { index: 0 } });
+  l.lattes([192, 193, 194, 195, 196], 10);
+  l.obj('sign', 205, 8, { w: 3, h: 4, props: { text: 'DELIVERIES\n→' } });
+  l.obj('exit', 226, 9, { w: 4, h: 3, props: { vehicle: 'backdoor' } });
+  writeFileSync(join(OUT, '3-3.tmj'), JSON.stringify(l.toJSON()));
+}
+
+console.log('maps written: 1-1, 1-1-bonus, 1-2, 1-3, 2-1, 2-2, 2-3, 3-1, 3-2, 3-3');

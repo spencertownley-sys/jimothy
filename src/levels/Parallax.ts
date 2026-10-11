@@ -16,6 +16,9 @@ const SETS: Record<string, ParallaxSet> = {
   pike: { sky: 0xe3b9a4, far: 'bg:pike_far', mid: 'bg:pike_mid', near: 'bg:pike_near' },
   alley: { sky: 0x2b2830, far: 'bg:pike_far', mid: 'bg:alley_mid' },
   waterfront: { sky: 0xa9d0d6, far: 'bg:pike_far', mid: 'bg:waterfront_mid' },
+  center: { sky: 0x1b1f4a, far: 'bg:center_far', mid: 'bg:center_mid', near: 'bg:center_near' },
+  monorail: { sky: 0x231a4f, far: 'bg:downtown_far', mid: 'bg:rooftops_mid' },
+  line: { sky: 0x1c1d3c, far: 'bg:center_far', mid: 'bg:restaurant_mid' },
 };
 
 interface Layer {

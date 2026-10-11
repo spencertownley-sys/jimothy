@@ -14,10 +14,13 @@
   - World 2 Pike Place market (and the World 2 postcard) — "Back in a Jiffy", Nocturnal Spirits
   - 2-2 The Gum Wall — "Tomorrow I'll Be Gone", Franz Gordon
   - 2-3 Waterfront Run (the seagull chase) — "Late for an Appointment", Stationary Sign
+  - World 3 Seattle Center, 3-1 Fountain Plaza (and the World 3 postcard) — "Break the Fast", Vision Heat
+  - 3-2 Monorail — "Arcadewave", Lupus Nocte
+  - 3-3 The Line — "Dubious Intentions", Ludvig Moulin
 - Sound effects — Epidemic Sound library (jump, latte, stomp, power-up, hurt, block, brick, death,
   fanfare, seagull, drain, 1-up, geoduck, checkpoint bell, cone boing, menu clicks, chainsaw,
   truck, goose honk, splash, Freeze ice pulse, scooter horn, pig oink, crow caw, elevator bell,
-  salmon whoosh); anything else
+  salmon whoosh, fountain geyser); anything else
   is synthesized in `src/core/audio/AudioManager.ts`
 - Licence check before a public release: confirm the Epidemic Sound plan covers use inside a
   distributed game, not only in videos / social content.

@@ -10,13 +10,14 @@ import { getProp, objectRect, objectType, type TiledObjectLike } from '../core/t
 import { heartsFor, resolveBlockItem, type PowerUpKind } from '../data/powerups';
 import { Brick } from '../entities/blocks/Brick';
 import { Checkpoint } from '../entities/blocks/Checkpoint';
+import { Geyser } from '../entities/blocks/Geyser';
 import { Mover, type MoverLeg } from '../entities/blocks/Mover';
 import { PathMover, throwPath, wheelPath } from '../entities/blocks/PathMover';
 import { QuestionBlock, type BlockHost } from '../entities/blocks/QuestionBlock';
 import { spawnProp } from '../entities/blocks/Prop';
 import { SeeSaw } from '../entities/blocks/SeeSaw';
 import { Sign } from '../entities/blocks/Sign';
-import { CanadaGoose, Enemy, spawnEnemy, type EnemyContext } from '../entities/enemies';
+import { CanadaGoose, Enemy, Freeze, spawnEnemy, type EnemyContext } from '../entities/enemies';
 import { Geoduck } from '../entities/items/Geoduck';
 import { Latte } from '../entities/items/Latte';
 import { PowerUp } from '../entities/items/PowerUp';
@@ -41,13 +42,19 @@ interface Zone {
   obj: TiledObjectLike;
 }
 
-/** Exit vehicles: how deep the hull sits, where the deck is, which way it leaves. */
-const VEHICLES: Record<string, { sink: number; deck: number; leave: 'right' | 'down' }> = {
+/**
+ * Exit vehicles: how deep the hull sits, where the deck is, which way it leaves. `in` = he steps
+ * through a door (monorail station, restaurant back door). `behind` draws it behind Jimothy.
+ */
+const VEHICLES: Record<string, { sink: number; deck: number; leave: 'right' | 'down' | 'in'; behind?: boolean }> = {
   boat: { sink: 34, deck: 0.42, leave: 'right' },
   kayak: { sink: 18, deck: 0.3, leave: 'right' },
   watertaxi: { sink: 40, deck: 0.5, leave: 'right' },
   handtruck: { sink: 0, deck: 0.62, leave: 'right' },
-  elevator: { sink: 0, deck: 0.04, leave: 'down' },
+  elevator: { sink: 0, deck: 0.04, leave: 'down', behind: true },
+  // the station's deck is ~28% up the sprite, over its pillar; the pillar sinks behind the paving
+  station: { sink: 60, deck: 0.27, leave: 'in', behind: true },
+  backdoor: { sink: 0, deck: 0.02, leave: 'in', behind: true },
 };
 
 interface Pad {
@@ -82,6 +89,18 @@ const easeIn = (t: number): number => t * t;
 const easeInOut = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 type Ride = Mover | PathMover;
+
+/** A tourist's umbrella in The Line: a one-way platform that only opens while it rains. */
+interface Umbrella {
+  img: Phaser.Physics.Arcade.Image;
+}
+
+/** 3-3's weather: rain every few seconds, umbrellas up while it lasts. */
+interface RainCycle {
+  t: number;
+  wet: boolean;
+  layers: Phaser.GameObjects.Image[];
+}
 
 export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, FlockHost {
   private def!: LevelDef;
@@ -139,7 +158,13 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private statics!: Phaser.Physics.Arcade.StaticGroup;
   private pig?: { img: Phaser.Physics.Arcade.Image; standMs: number; done: boolean };
   private flock?: Flock;
-  private riders: { img: Phaser.GameObjects.GameObject & { x: number; y: number }; ride: PathMover; dy: number }[] = [];
+  private riders: { img: Phaser.GameObjects.GameObject & { x: number; y: number }; ride: PathMover; dx: number; dy: number }[] = [];
+  private geysers: Geyser[] = [];
+  private umbrellas: Umbrella[] = [];
+  private umbrellaGroup!: Phaser.Physics.Arcade.StaticGroup;
+  private rain?: RainCycle;
+  /** auto-scroller camera (3-2): scroll x, speed, where it stops */
+  private scroll?: { x: number; speed: number; max: number };
   private input_ = getInput().state;
   private timeMs = 0;
   private ending = false;
@@ -181,6 +206,10 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.pig = undefined;
     this.flock = undefined;
     this.riders = [];
+    this.geysers = [];
+    this.umbrellas = [];
+    this.rain = undefined;
+    this.scroll = undefined;
     this.input_.reset();
     this.run = (this.registry.get(RUN_KEY) as RunState | undefined) ?? newRun(def.id);
     this.run.levelId = def.id;
@@ -206,6 +235,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.walls = this.physics.add.staticGroup();
     this.padGroup = this.physics.add.staticGroup();
     this.statics = this.physics.add.staticGroup();
+    this.umbrellaGroup = this.physics.add.staticGroup();
     AudioManager.prefetchMusic(def.music);
 
     // spawn point: explicit (drains) → checkpoint for this level → start
@@ -228,6 +258,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.physics.add.collider(this.player, this.moverGroup);
     this.physics.add.collider(this.player, this.walls);
     this.physics.add.collider(this.player, this.statics);
+    this.physics.add.collider(this.player, this.umbrellaGroup);
     this.physics.add.collider(this.player, this.padGroup, (_p, pad) => this.landOnPad(pad as Phaser.Physics.Arcade.Image));
     for (const ss of this.seesaws) {
       this.physics.add.collider(this.player, ss, () => ss.land(this.player, this.input_.get('jump')));
@@ -252,6 +283,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     cam.setDeadzone(CONFIG.CAMERA.DEADZONE_W, CONFIG.CAMERA.DEADZONE_H);
     cam.setFollowOffset(-CONFIG.CAMERA.LOOKAHEAD, 40);
     cam.fadeIn(300, 0, 0, 0);
+    if (def.autoScroll > 0) {
+      // 3-2: the camera rides the monorail at a fixed speed instead of following Jimothy
+      cam.stopFollow();
+      cam.setScroll(0, 0);
+      this.scroll = { x: 0, speed: def.autoScroll, max: Math.max(0, this.level.widthPx - CONFIG.WIDTH) };
+    }
 
     if (Save.get().options.drizzle && this.level.parallaxSet !== 'drain') {
       this.add.particles(0, 0, 'fx:drop', {
@@ -346,6 +383,18 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
         case 'flock':
           this.flock = new Flock(this, r.x, getProp(obj, 'speed', CONFIG.FLOCK.SPEED), getProp(obj, 'swoopers', CONFIG.FLOCK.SWOOPERS), this);
           break;
+        case 'geyser':
+          this.geysers.push(new Geyser(this, r.centerX, r.bottom, getProp(obj, 'height', CONFIG.GEYSER.HEIGHT_TILES), getProp(obj, 'phase', 0), Math.max(1, Math.round(r.width / CONFIG.TILE))));
+          break;
+        case 'umbrella':
+          this.spawnUmbrella(r.centerX, r.y);
+          break;
+        case 'monorail':
+          this.spawnMonorail(r.x, r.y, getProp(obj, 'stopAt', 0) * CONFIG.TILE, getProp(obj, 'revealAt', -1) * CONFIG.TILE, getProp(obj, 'carryGeoduck', -1));
+          break;
+        case 'gantry':
+          this.spawnGantry(new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height));
+          break;
         case 'flashzone':
           this.flashZones.push({ rect: new Phaser.Geom.Rectangle(r.x, r.y, r.width, r.height), cooldownMs: 0 });
           break;
@@ -368,7 +417,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
           if (vdef && this.textures.get('blocks').has(vehicle)) {
             // the boat / kayak / water taxi waits at the water's edge, its hull a little under the
             // surface; the hand truck and the elevator just stand there
-            const v = this.add.image(r.centerX, r.bottom + vdef.sink, 'blocks', vehicle).setOrigin(0.5, 1).setDepth(vehicle === 'elevator' ? 3 : 11);
+            const v = this.add.image(r.centerX, r.bottom + vdef.sink, 'blocks', vehicle).setOrigin(0.5, 1).setDepth(vdef.behind ? 3 : 11);
             if (vdef.sink > 0) this.tweens.add({ targets: v, y: v.y + 5, angle: 1.2, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
             this.exitVehicle = v;
           }
@@ -383,6 +432,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
           console.warn(`[level] unsupported object type "${type}" at ${r.x},${r.y}`);
       }
     }
+    if (this.umbrellas.length > 0) this.startRain();
     // the goose waits in its arena
     if (this.arena) {
       for (const e of this.enemies.getChildren() as Enemy[]) {
@@ -425,6 +475,9 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
 
     this.updateSurfaces();
     const padUnder = this.padUnderFeet();
+    // last step's ride along a moving platform isn't his own momentum
+    this.player.body.velocity.x -= this.player.carryVx;
+    this.player.carryVx = 0;
     this.player.fixedUpdate(this.input_, dtMs);
     // jumping off a bounce pad you're standing on is the big launch (sprint-jump off the scooter)
     if (padUnder && this.input_.justPressed('jump') && this.player.body.velocity.y < 0) {
@@ -437,9 +490,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     for (const e of this.enemies.getChildren() as Enemy[]) e.fixedUpdate(ctx);
     this.updateMovers(dtMs);
     this.updatePig(dtMs);
+    for (const g of this.geysers) g.fixedUpdate(dtMs, this.player);
+    this.updateRain(dtMs);
+    this.updateScroll(dtMs);
     for (const rd of this.riders) {
       if (!rd.img.active) continue;
-      rd.img.x = rd.ride.body.center.x;
+      rd.img.x = rd.ride.body.center.x + rd.dx;
       rd.img.y = rd.ride.body.top + rd.dy;
       const body = (rd.img as unknown as { body?: Phaser.Physics.Arcade.Body }).body;
       body?.reset(rd.img.x, rd.img.y);
@@ -611,9 +667,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
         pb.y = mb.top - pb.height;
         pb.velocity.y = mb.velocity.y;
       }
-      // Standing on something that moves sideways (thrown salmon, gondolas): move with it.
-      if (alive && across && mb.velocity.x !== 0 && Math.abs(pb.bottom - mb.top) <= 6 && pb.velocity.y >= mb.velocity.y - 40) {
-        pb.x += mb.velocity.x * (dtMs / 1000);
+      // Standing on something that moves sideways (thrown salmon, gondolas, the monorail): ride
+      // along. Added as velocity, not position, so Arcade sees him moving and the gantries and
+      // the museum wall on 3-2 really do shove him; it comes off again before his next step.
+      if (alive && across && mb.velocity.x !== 0 && Math.abs(pb.bottom - mb.top) <= 6 && pb.velocity.y >= mb.velocity.y - 40 && this.player.carryVx === 0) {
+        this.player.carryVx = mb.velocity.x;
+        pb.velocity.x += mb.velocity.x;
       }
       if (!(m instanceof Mover) || !this.gates.includes(m) || mb.velocity.y <= 0) continue;
       // a sinking gate never squashes Jimothy: it waits while he's underneath it
@@ -746,7 +805,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
       if (i === 0 && carryGeoduck >= 0 && !this.run.geoducksFound[carryGeoduck]) {
         const d = new Geoduck(this, g.x, g.y - 30, carryGeoduck);
         this.geoducks.add(d);
-        this.riders.push({ img: d, ride: g, dy: -30 });
+        this.riders.push({ img: d, ride: g, dx: 0, dy: -30 });
       }
     }
   }
@@ -824,6 +883,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     if (!p.lastGrounded) {
       p.onSlime = false;
       p.onSand = false;
+      p.onWet = false;
       return;
     }
     const feet = p.body.bottom;
@@ -831,6 +891,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     p.onSlime = hz?.properties?.hazard === 'gum' || this.slimes.some((sl) => Math.abs(sl.x - p.x) < 44 && Math.abs(sl.y - feet) < 12);
     const t = this.level.ground.getTileAtWorldXY(p.x, feet + 4);
     p.onSand = t?.properties?.surface === 'sand';
+    p.onWet = t?.properties?.surface === 'wet';
   }
 
   private updateWater(): void {
@@ -927,6 +988,136 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     }
   }
 
+  // --- World 3 mechanisms ---------------------------------------------------------------------
+
+  /** A tourist's black umbrella: open (and solid from above) only while it rains. */
+  private spawnUmbrella(x: number, top: number): void {
+    const img = this.umbrellaGroup.create(x, top, 'blocks', 'umbrella') as Phaser.Physics.Arcade.Image;
+    img.setOrigin(0.5, 0).setDepth(7).refreshBody();
+    const b = img.body as Phaser.Physics.Arcade.StaticBody;
+    b.setSize(img.width * 0.86, 18, false).setOffset(img.width * 0.07, 6);
+    b.checkCollision.down = false;
+    b.checkCollision.left = false;
+    b.checkCollision.right = false;
+    this.umbrellas.push({ img });
+  }
+
+  private startRain(): void {
+    const layers: Phaser.GameObjects.Image[] = [];
+    if (this.textures.exists('bg:rain')) {
+      // two stacked copies scroll down; ADD blending drops the black out of the streaks
+      for (let i = 0; i < 2; i++) {
+        layers.push(this.add.image(0, -i * CONFIG.HEIGHT, 'bg:rain').setOrigin(0, 0).setScrollFactor(0).setDepth(39).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
+      }
+    }
+    // start dry, so the first thing you see is the street, then the first shower
+    this.rain = { t: CONFIG.RAIN.WET_MS, wet: true, layers };
+    this.setWet(false, true);
+  }
+
+  private setWet(wet: boolean, instant = false): void {
+    const r = this.rain;
+    if (!r || r.wet === wet) return;
+    r.wet = wet;
+    const R = CONFIG.RAIN;
+    this.tweens.add({ targets: r.layers, alpha: wet ? 0.55 : 0, duration: instant ? 0 : R.FADE_MS });
+    for (const u of this.umbrellas) {
+      const body = u.img.body as Phaser.Physics.Arcade.StaticBody;
+      this.tweens.killTweensOf(u.img);
+      u.img.setAngle(0);
+      if (wet) {
+        // locals don't use umbrellas: every one that pops open is a tourist's
+        body.enable = true;
+        u.img.setVisible(true).setScale(0.15, 1);
+        this.tweens.add({ targets: u.img, scaleX: 1, duration: instant ? 0 : 220, ease: 'Back.out' });
+      } else {
+        body.enable = false;
+        this.tweens.add({ targets: u.img, scaleX: 0.12, duration: instant ? 0 : 180, ease: 'Quad.in', onComplete: () => u.img.setVisible(false) });
+      }
+    }
+  }
+
+  private updateRain(dtMs: number): void {
+    const r = this.rain;
+    if (!r) return;
+    const R = CONFIG.RAIN;
+    r.t = (r.t + dtMs) % R.PERIOD_MS;
+    const wet = r.t < R.WET_MS;
+    if (wet !== r.wet) this.setWet(wet);
+    // the umbrellas wobble just before they fold, so you know to get off
+    if (wet && r.t > R.WET_MS - R.WARN_MS) {
+      for (const u of this.umbrellas) u.img.setAngle(Math.sin(this.timeMs / 40) * 4);
+    }
+    for (const l of r.layers) {
+      l.y += 26;
+      if (l.y >= CONFIG.HEIGHT) l.y -= CONFIG.HEIGHT * 2;
+    }
+  }
+
+  /**
+   * The 3-2 monorail: a long train you ride on the roof. It keeps pace with the auto-scrolling
+   * camera with its rear off-screen; from `revealAt` (camera x) it pulls ahead a little so the
+   * rear window — and the geoduck riding there — comes into view; it eases to a stop at `stopAt`
+   * (where its nose ends up).
+   */
+  private spawnMonorail(left: number, roofTop: number, stopAtPx: number, revealAtPx: number, carryGeoduck: number): void {
+    const M = CONFIG.MONORAIL;
+    const speed = this.def.autoScroll;
+    const w = this.textures.getFrame('blocks', 'monorail').realWidth;
+    const startNose = left + w;
+    const revealMs = revealAtPx >= 0 ? (revealAtPx / speed) * 1000 : Infinity;
+    const roofOffset = 14;
+    const path = (t: number) => {
+      const u = Phaser.Math.Clamp((t - revealMs) / M.CATCH_UP_MS, 0, 1);
+      let nose = startNose + (speed * t) / 1000 + M.REVEAL_PX * easeInOut(u);
+      // ease into the station instead of stopping dead
+      const soft = stopAtPx - M.STOP_EASE_PX;
+      if (stopAtPx > 0 && nose > soft) nose = soft + M.STOP_EASE_PX * (1 - Math.exp(-(nose - soft) / M.STOP_EASE_PX));
+      return { x: nose - w / 2, y: roofTop - roofOffset, visible: true };
+    };
+    const car = new PathMover(this, 'monorail', path, 0, w - 24, 20, roofOffset);
+    car.setDepth(7);
+    this.moverGroup.add(car);
+    car.body.setAllowGravity(false);
+    car.body.setImmovable(true);
+    this.movers.push(car);
+    if (carryGeoduck >= 0 && !this.run.geoducksFound[carryGeoduck]) {
+      const d = new Geoduck(this, left + 60, roofTop - 30, carryGeoduck);
+      this.geoducks.add(d);
+      this.riders.push({ img: d, ride: car, dx: -w / 2 + 60, dy: -30 });
+    }
+  }
+
+  /** A signal gantry over the monorail track: duck under it (or jump over it). */
+  private spawnGantry(r: Phaser.Geom.Rectangle): void {
+    const zone = this.add.zone(r.centerX, r.centerY, r.width, r.height);
+    this.walls.add(zone);
+    if (this.textures.get('blocks').has('gantry')) {
+      // the truss is the top ~60% of the art; the leg hangs down behind the train
+      const img = this.add.image(r.centerX, r.y - 8, 'blocks', 'gantry').setOrigin(0.5, 0.08).setDepth(3);
+      img.setScale((r.width * 1.25) / img.width);
+    }
+  }
+
+  /** Auto-scroll: advance the camera, keep Jimothy on screen, and the left edge is a wall of death. */
+  private updateScroll(dtMs: number): void {
+    const sc = this.scroll;
+    if (!sc || this.player.fsm === 'Dead') return;
+    const A = CONFIG.AUTOSCROLL;
+    sc.x = Math.min(sc.x + (sc.speed * dtMs) / 1000, sc.max);
+    this.cameras.main.setScroll(sc.x, 0);
+    const pb = this.player.body;
+    if (this.player.x < sc.x - A.KILL_MARGIN) {
+      this.player.die();
+      return;
+    }
+    const maxX = sc.x + CONFIG.WIDTH - A.RIGHT_MARGIN;
+    if (pb.right > maxX) {
+      pb.x = maxX - pb.width;
+      if (pb.velocity.x > 0) pb.velocity.x = 0;
+    }
+  }
+
   // --- world queries ----------------------------------------------------------------------
 
   private solidAt(x: number, y: number): boolean {
@@ -977,6 +1168,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     enemy.defeat(drop.body.velocity.x < 0 ? -1 : 1);
     AudioManager.sfx('splash');
     drop.destroy();
+    const gift = enemy instanceof Freeze ? enemy.takeGift() : -1;
+    if (gift >= 0 && !this.run.geoducksFound[gift]) this.geoducks.add(new Geoduck(this, enemy.x, enemy.y - enemy.def.h - 30, gift));
   }
 
   private collectLatte(latte: Latte): void {
@@ -1126,7 +1319,14 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
       this.tweens.add({
         targets: this.player, x: v.x - 10, y: deckY, duration: 450, ease: 'Quad.out',
         onComplete: () => {
-          AudioManager.sfx(vehicle === 'elevator' ? 'ding' : 'ticket');
+          AudioManager.sfx(vehicle === 'elevator' || vdef.leave === 'in' ? 'ding' : 'ticket');
+          if (vdef.leave === 'in') {
+            // through the station doors / the restaurant's back door
+            this.tweens.add({ targets: this.player, alpha: 0, scale: 0.85, duration: 700, ease: 'Sine.in' });
+            this.cameras.main.fadeOut(1000, 0, 0, 0);
+            this.time.delayedCall(1100, () => this.finishLevel(totalMs));
+            return;
+          }
           if (vdef.leave === 'down') {
             // the elevator takes him down to the waterfront
             this.tweens.add({ targets: this.player, y: deckY + 80, alpha: 0, duration: 900, ease: 'Sine.in' });

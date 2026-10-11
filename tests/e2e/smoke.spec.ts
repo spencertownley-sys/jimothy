@@ -43,7 +43,7 @@ test('1-1 loads and Jimothy can run', async ({ page }) => {
 });
 
 /** Every level with a cutscene: it plays, skips into the level, Jimothy can move, no console errors. */
-for (const id of ['1-2', '1-3', '2-1', '2-2', '2-3']) {
+for (const id of ['1-2', '1-3', '2-1', '2-2', '2-3', '3-1', '3-2', '3-3']) {
   test(`${id} cutscene → level loads and Jimothy can move`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (msg) => {

@@ -3,7 +3,7 @@
 A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
-**Status:** Worlds 1 and 2 are playable end to end, with saving:
+**Status:** Worlds 1, 2 and 3 are playable end to end, with saving:
 - **World 1 · Ballard** — 1-1 "Welcome to Ballard" (with the storm-drain bonus room), 1-2 "The
   Locks", 1-3 "Golden Gardens at Dusk" (Canada Goose mini-boss), then the World 1 postcard.
 - **World 2 · Pike Place** — 2-1 "Market Arcade" (ride thrown salmon, dahlia bounce pads, the
@@ -11,6 +11,12 @@ TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebas
   slide down the sticky gum wall, scooters that honk before they shoot through, a secret alcove
   behind the stage door), 2-3 "Waterfront Run" (a seagull flock chases you; Great Wheel gondolas;
   side piers), then the World 2 postcard.
+- **World 3 · Seattle Center (night)** — 3-1 "Fountain Plaza" (fountain jets launch you, wet
+  paving slides, Freeze pairs, a crawl through the glass-garden tube), 3-2 "Monorail" (an
+  auto-scroller on the train roof: duck the signal gantries, hop over the museum the line runs
+  through, diving crows), 3-3 "The Line" (a Freeze queue pulsing in a wave; awnings overhead,
+  tourists' umbrellas that only open in the rain; thaw a Freeze three times for a geoduck), then
+  the World 3 postcard.
 
 Every level after 1-1 opens with a short painted cutscene the first time you enter it from the map;
 the map shows one neighbourhood at a time (◀ ▶ past the last stop to change world). See
@@ -40,9 +46,9 @@ Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 | `npm run build` | typecheck + static build to `dist/` (`base: './'`, so it works from any Pages subpath) |
 | `npm run lint` / `npm run test` | ESLint · Vitest (input edge detection, jump-feel sim, save migration) |
 | `npm run test:e2e` | Playwright smoke test: boots, starts 1-1, runs right, no console errors. Set `CHROMIUM_PATH` to use a preinstalled Chromium. |
-| `npm run gen:art` | builds every sprite, the tilesets (Ballard, lock wall, beach, market, gum alley, pier), water and parallax layers, world maps and story panels from the Higgsfield images (needs ImageMagick) |
+| `npm run gen:art` | builds every sprite, the tilesets (Ballard, lock wall, beach, market, gum alley, pier, plaza), water and parallax layers, world maps and story panels from the Higgsfield images (needs ImageMagick) |
 | `npm run pack:atlases` | packs `art/sprites/*` into `public/assets/atlases/*.png + .json` |
-| `npm run gen:level` | regenerates the World 1 and 2 maps (`1-1`, `1-1-bonus`, `1-2`, `1-3`, `2-1`, `2-2`, `2-3`) in `public/assets/maps/` from `scripts/gen-level.mjs` |
+| `npm run gen:level` | regenerates the World 1–3 maps (`1-1`, `1-1-bonus`, `1-2`, `1-3`, `2-1`, `2-2`, `2-3`, `3-1`, `3-2`, `3-3`) in `public/assets/maps/` from `scripts/gen-level.mjs` |
 | `node scripts/dev/flow.mjs out/` | dev probe that drives the built game through the whole 1-1 flow and screenshots each screen |
 
 ## Layout

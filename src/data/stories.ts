@@ -1,4 +1,4 @@
-// Cutscene scripts. Each beat is one painted Higgsfield panel (art/higgsfield 30-33, 60-63)
+// Cutscene scripts. Each beat is one painted Higgsfield panel (art/higgsfield 30-33, 60-63, 90-94, 116-120)
 // with a slow Ken Burns move and a typed caption. Short captions only (GDD §6 tone guardrails).
 
 export interface StoryBeat {
@@ -190,6 +190,76 @@ export const STORIES: Record<string, Story> = {
       {
         image: 'story:postcard_w2',
         caption: 'Jimothy has acquired: a fish. He does not know why.',
+        zoom: [1.0, 1.06],
+        focus: { x: 0.5, y: 0.5 },
+        holdMs: 6000,
+      },
+    ],
+  },
+  // World 3 — Seattle Center at night. The clue: his gaze, on a pop-up poster.
+  '3-1': {
+    music: 'needle',
+    beats: [
+      {
+        image: 'story:center',
+        caption: 'Seattle Center, midnight. The water taxi was long gone.\nThe crate was on a cargo bike, heading for the fountain.',
+        zoom: [1.0, 1.14],
+        focus: { x: 0.7, y: 0.5 },
+        holdMs: 5800,
+      },
+      {
+        image: 'story:poster',
+        caption: '"THE RACCOON EXPERIENCE. OPENING SOON."\nThat was his gaze. In a glass box.',
+        zoom: [1.04, 1.24],
+        focus: { x: 0.7, y: 0.42 },
+        holdMs: 6000,
+      },
+    ],
+  },
+  '3-2': {
+    music: 'monorail',
+    beats: [
+      {
+        image: 'story:monorail',
+        caption: 'The crate was on the last monorail downtown.\nOn the roof. Naturally.',
+        zoom: [1.0, 1.16],
+        focus: { x: 0.36, y: 0.32 },
+        holdMs: 5400,
+      },
+      {
+        image: 'story:monorail',
+        caption: 'Jimothy has never bought a ticket.\nHe is not about to start.',
+        zoom: [1.16, 1.06],
+        focus: { x: 0.62, y: 0.55 },
+        holdMs: 5000,
+      },
+    ],
+  },
+  '3-3': {
+    music: 'line',
+    beats: [
+      {
+        image: 'story:line',
+        caption: 'Downtown. The crate went in the back door\nof the hottest restaurant in town.',
+        zoom: [1.0, 1.15],
+        focus: { x: 0.82, y: 0.36 },
+        holdMs: 5600,
+      },
+      {
+        image: 'story:line',
+        caption: 'The line went around the block.\nNobody looked up from their phone.',
+        zoom: [1.15, 1.04],
+        focus: { x: 0.45, y: 0.6 },
+        holdMs: 5600,
+      },
+    ],
+  },
+  'postcard-w3': {
+    music: 'needle',
+    beats: [
+      {
+        image: 'story:postcard_w3',
+        caption: 'Jimothy waited 40 minutes. The restaurant was fine.',
         zoom: [1.0, 1.06],
         focus: { x: 0.5, y: 0.5 },
         holdMs: 6000,

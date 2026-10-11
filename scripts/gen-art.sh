@@ -385,4 +385,58 @@ for pair in 90:market 91:fishmonger 92:gumwall 93:waterfront 94:postcard_w2; do
   f=$(ls $HF/${n}_*.jpg)
   convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$name.jpg
 done
+# ======================================================================================
+# World 3 — Seattle Center at night: 3-1 Fountain Plaza, 3-2 Monorail, 3-3 The Line (100-120)
+# ======================================================================================
+# ---- Mechanisms and vehicles (blocks atlas) -------------------------------------------------
+# the grey between the two cars' roof rails is enclosed, so seed a fill there too
+convert $HF/104_monorail.jpg -crop 1758x375+162+265 +repage -alpha set -fuzz 8% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 1755,2 floodfill" -draw "matte 2,372 floodfill" -draw "matte 1755,372 floodfill" \
+  -draw "matte 773,6 floodfill" -draw "matte 773,14 floodfill" -trim +repage -resize 1000x $OUT/blocks/monorail.png
+cutfill $HF/105_gantry_beam_billboard.jpg 567x263+92+153 $OUT/blocks/gantry.png -resize 240x
+cutfill $HF/108_geyser.jpg 684x248+61+792 $OUT/blocks/geyser_base.png -resize 110x
+cutfill $HF/108_geyser.jpg 278x910+930+119 $OUT/blocks/geyser_jet.png -resize x300
+cutfill $HF/108_geyser.jpg 297x256+1572+752 $OUT/blocks/splash.png -resize 80x
+cutfill $HF/111_awning_umbrella_doors.jpg 578x440+611+358 $OUT/blocks/umbrella.png -resize 150x
+cutfill $HF/111_awning_umbrella_doors.jpg 248x503+1662+321 $OUT/blocks/backdoor.png -resize x150
+cutfill $HF/113_monorail_station.jpg 1473x785+254+84 $OUT/blocks/station.png -resize 420x
+# ---- Props ----------------------------------------------------------------------------------
+cutfill $HF/105_gantry_beam_billboard.jpg 597x291+732+137 $OUT/props/beam.png -resize 288x
+# the lower of the two billboards; flood-fill from the corners and from the fog between its legs
+convert $HF/105_gantry_beam_billboard.jpg -crop 545x534+1418+346 +repage -alpha set -fuzz 8% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 542,2 floodfill" -draw "matte 2,531 floodfill" -draw "matte 542,531 floodfill" \
+  -draw "matte 250,470 floodfill" -draw "matte 250,525 floodfill" -draw "matte 150,500 floodfill" -draw "matte 350,500 floodfill" \
+  -trim +repage -resize 300x $OUT/props/billboard.png
+cutfill $HF/109_glass_lamp_roof.jpg 832x339+82+582 $OUT/props/glasstube.png -resize 300x
+cutfill $HF/109_glass_lamp_roof.jpg 284x784+996+126 $OUT/props/lamp.png -resize x260
+cutfill $HF/109_glass_lamp_roof.jpg 700x361+1280+538 $OUT/props/wavyroof.png -resize 300x
+cutfill $HF/111_awning_umbrella_doors.jpg 555x296+51+432 $OUT/props/awning.png -resize 200x
+cutfill $HF/111_awning_umbrella_doors.jpg 349x546+1183+309 $OUT/props/soldout.png -resize x170
+cutfill $HF/112_fountain_kids.jpg 1683x726+173+218 $OUT/props/fountainkids.png -resize x200
+# ---- Tileset: wet plaza paving (3-1, 3-2 stations); 3-3 reuses the Post Alley cobbles --------
+tileset plaza $HF/103_plaza_tex.jpg $HF/105_gantry_beam_billboard.jpg 500x100+760+165 0
+# ---- Parallax --------------------------------------------------------------------------
+convert $HF/100_center_far.jpg -resize x720 $TMP/cf.png; mirror $TMP/cf.png $TMP/cf2.png
+convert $TMP/cf2.png -quality 84 $BG/bg_center_far.jpg
+convert $HF/106_downtown_far.jpg -resize x720 $TMP/mf.png; mirror $TMP/mf.png $TMP/mf2.png
+convert $TMP/mf2.png -quality 84 $BG/bg_downtown_far.jpg
+# the museum and the fountain: flood-fill the outer grey only (the domes hold grey glass)
+convert $HF/101_center_mid.jpg -crop 2048x780+0+0 +repage -alpha set -fuzz 6% -fill none \
+  -draw "matte 2,2 floodfill" -draw "matte 2045,2 floodfill" -draw "matte 1024,2 floodfill" \
+  -trim +repage -resize x380 $TMP/cm.png
+mirror $TMP/cm.png $BG/bg_center_mid.png
+keygrey $HF/102_center_near.jpg $BG/bg_center_near.png 220
+convert $HF/107_rooftops_mid.jpg -crop 2048x800+0+0 +repage $TMP/rt.png
+keygrey $TMP/rt.png $BG/bg_rooftops_mid.png 420
+keygrey $HF/110_restaurant_mid.jpg $BG/bg_restaurant_mid.png 440
+# rain: white streaks on black, drawn with ADD blending so the black drops out
+convert $HF/115_rain_streaks.jpg -resize '1280x720!' -quality 80 $BG/rain.jpg
+# World 3 map (Seattle Center and the monorail downtown)
+convert $HF/114_map_center.jpg -resize '1280x720!' -quality 86 $BG/map_center.jpg
+# ---- Story panels -------------------------------------------------------------------------------
+for pair in 116:center 117:poster 118:monorail 119:line 120:postcard_w3; do
+  n=${pair%%:*}; name=${pair#*:}
+  f=$(ls $HF/${n}_*.jpg)
+  convert "$f" -resize '1280x720^' -gravity center -extent 1280x720 -quality 84 $ST/$name.jpg
+done
 echo "art generated"

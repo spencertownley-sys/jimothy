@@ -89,3 +89,24 @@ Files here are 2048 px JPEG copies of the originals.
 | 92_story_gumwall.jpg | 2-2 cutscene: LUXE flyer stuck in the gum wall | 09eb2e44-0688-4cf8-8bc1-bf8f4809568b |
 | 93_story_waterfront.jpg | 2-3 cutscene: the crate onto a water taxi, the flock notices | 378e07ef-e272-4234-ba80-19c18e27891e (on-model regen, image refs 21 + 94) |
 | 94_postcard_pike.jpg | World 2 postcard: Jimothy with a fish on his head | 2311c43d-3de9-43e4-a1b9-9564d32418b6 (on-model regen, image refs 21 + 63) |
+| 100_center_far.jpg | World 3 far parallax (the Needle, skyline, stars) | d2d4aeb9-5f75-4683-8e5a-13f7b9476401 |
+| 101_center_mid.jpg | 3-1 mid parallax (wavy rock museum, plaza fountain) | a5713c02-8d4a-4a3a-8a25-6c871a722658 |
+| 102_center_near.jpg | 3-1 near parallax (glowing glass garden, lamp posts) | 6500f66e-7162-4d9e-8e6a-3b35834a417a |
+| 103_plaza_tex.jpg | wet plaza paving tiles | d9c0e349-0839-4125-942a-aee5ee5acb0b |
+| 104_monorail.jpg | the monorail train (3-2 platform) | a6a3a86e-12df-4f1b-b1d8-c1467f8e3dc0 |
+| 105_gantry_beam_billboard.jpg | signal gantry, monorail beam, SEATTLE'S BEST WORST TRAFFIC billboard | 9167f3ae-22e2-4a3c-a7fa-425c6b13b9b5 |
+| 106_downtown_far.jpg | 3-2 far parallax (downtown at night) | e929d124-c326-4d1d-bbd0-65d2f8b96bf5 |
+| 107_rooftops_mid.jpg | 3-2 mid parallax (rooftops, water tanks) | 2b08f490-f615-43b1-b367-c897948c8a96 |
+| 108_geyser.jpg | fountain nozzle, geyser jet, splash | 0278d684-5380-4191-a5e2-d1a5c8e2dc73 |
+| 109_glass_lamp_roof.jpg | glass tube, iron lamp post, wavy museum roof | f786b13e-2910-4f9e-b21e-8ac1f36f723c |
+| 110_restaurant_mid.jpg | 3-3 mid parallax (restaurant street in the rain) | ce7b80ef-acb7-40f7-b524-51ec16a00c8d |
+| 111_awning_umbrella_doors.jpg | awning, tourist umbrella, SOLD OUT front door, back door | 0721a083-dc83-4e42-94fd-3bf5b9002fce |
+| 112_fountain_kids.jpg | 3-1 joke: kids in the fountain at midnight, parent on phone | 816806d0-2c7f-478d-95dd-1bcb47f566b6 |
+| 113_monorail_station.jpg | elevated monorail station (3-1 / 3-2 exits) | 3284c4b0-948a-48fa-b100-71f8318acbd4 |
+| 114_map_center.jpg | World 3 map (Seattle Center and the monorail downtown) | d6142cc2-1367-413b-9839-c29e00f4fa72 |
+| 115_rain_streaks.jpg | rain overlay (3-3) | c7a7dc14-9492-4710-a73b-313c6349a07c |
+| 116_story_center.jpg | 3-1 cutscene: midnight at Seattle Center | e6420c7c-3917-45f1-b32a-dcee7d8ad04a (on-model regen, image refs 21 + 22 + 119) |
+| 117_story_poster.jpg | 3-1 cutscene: THE RACCOON EXPERIENCE poster | 326542b5-1dce-4995-9a49-79488a8adfa3 (on-model regen, image refs 21 + 22 + 119) |
+| 118_story_monorail.jpg | 3-2 cutscene: the crate on the monorail roof | 7d59a2da-c992-44a6-8691-2e266b2d5e33 |
+| 119_story_line.jpg | 3-3 cutscene: the line, the crate at the back door | 4a0c896e-fa33-488d-9341-1f558b1ddcba |
+| 120_postcard_center.jpg | World 3 postcard: the restaurant was fine | 26ef1169-f3e7-432d-a519-a808cfbaf734 |

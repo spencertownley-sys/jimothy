@@ -6,7 +6,8 @@ const warned = new Set<string>();
 /**
  * Decor sprite from the `props` atlas (trees, bins, ferns, porch columns…), placed by a Tiled
  * `prop` object. Height comes from the object rect; width keeps the art's aspect unless
- * `stretch` is set. `front` draws it over Jimothy, e.g. the compost bin hiding Geoduck #1.
+ * `stretch` is set. `front` draws it over Jimothy, e.g. the compost bin hiding Geoduck #1;
+ * `alpha` makes it see-through.
  */
 export function spawnProp(scene: Phaser.Scene, obj: TiledObjectLike): Phaser.GameObjects.Image | undefined {
   const sprite = getProp<string>(obj, 'sprite', '');
@@ -26,5 +27,7 @@ export function spawnProp(scene: Phaser.Scene, obj: TiledObjectLike): Phaser.Gam
   if (getProp(obj, 'stretch', false)) img.setDisplaySize(r.width, r.height);
   else img.setScale(r.height / img.height);
   img.setDepth(getProp(obj, 'front', false) ? 11 : 2);
+  // glass (the 3-1 sculpture tube) lets you see Jimothy crawling through it
+  img.setAlpha(getProp(obj, 'alpha', 1));
   return img;
 }

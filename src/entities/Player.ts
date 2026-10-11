@@ -32,10 +32,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   crouching = false;
   onSlime = false;
   onSand = false;
+  /** the wet Fountain Plaza: a slight slide */
+  onWet = false;
   /** pressing into the sticky gum wall: slide down it slowly */
   wallSlide = false;
   /** hits taken this life (the goose fight's no-damage geoduck reads it) */
   hitsTaken = 0;
+  /** sideways speed borrowed from the platform he's riding this step (the scene adds and removes it) */
+  carryVx = 0;
   /** vertical speed at the end of the last step, before the next collision zeroes it */
   lastVy = 0;
   private launchMs = 0;
@@ -136,7 +140,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     let max = this.crouching && grounded ? CONFIG.CROUCH_WALK_MAX : sprint ? CONFIG.RUN_MAX : CONFIG.WALK_MAX;
     if (this.inPothole && this.power !== 'jacket') max *= CONFIG.POTHOLE_SLOW;
     const accel = grounded ? CONFIG.ACCEL_GROUND : CONFIG.ACCEL_AIR;
-    const friction = grounded ? (this.onSlime ? CONFIG.SLIME_FRICTION : this.onSand ? CONFIG.SAND_FRICTION : CONFIG.FRICTION) : CONFIG.AIR_DRAG;
+    const friction = grounded ? (this.onSlime ? CONFIG.SLIME_FRICTION : this.onSand ? CONFIG.SAND_FRICTION : this.onWet ? CONFIG.WET_FRICTION : CONFIG.FRICTION) : CONFIG.AIR_DRAG;
     let vx = this.body.velocity.x;
     let skidding = false;
     if (dir !== 0) {
@@ -341,6 +345,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   knockback(dirX: 1 | -1, speed: number): void {
     if (this.fsm === 'Dead' || this.fsm === 'Victory') return;
     this.body.setVelocity(dirX * speed, -260);
+    this.carryVx = 0; // the shove replaces whatever he was riding
     Haptics.pulse('stomp');
     if (this.iframesMs < CONFIG.KNOCKBACK_IFRAMES_MS) this.iframesMs = CONFIG.KNOCKBACK_IFRAMES_MS;
   }
@@ -348,6 +353,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   die(): void {
     if (this.fsm === 'Dead') return;
     this.fsm = 'Dead';
+    this.carryVx = 0;
     this.crouching = false;
     this.flannelMs = 0;
     this.clearTint();
@@ -431,6 +437,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   debugInfo(): string {
     const v = this.body.velocity;
     const b = this.body;
-    return `${this.fsm} ${this.power} vx=${v.x.toFixed(0)} vy=${v.y.toFixed(0)} grounded=${this.lastGrounded} coyote=${Math.max(0, this.coyoteMs).toFixed(0)} buffer=${Math.max(0, this.bufferMs).toFixed(0)} crouch=${this.crouching} slime=${this.onSlime} sand=${this.onSand} pothole=${this.inPothole} frame=${this.frame.name} body=${b.x.toFixed(0)},${b.y.toFixed(0)} ${b.width}x${b.height} off=${b.offset.x},${b.offset.y}`;
+    return `${this.fsm} ${this.power} vx=${v.x.toFixed(0)} vy=${v.y.toFixed(0)} grounded=${this.lastGrounded} coyote=${Math.max(0, this.coyoteMs).toFixed(0)} buffer=${Math.max(0, this.bufferMs).toFixed(0)} crouch=${this.crouching} slime=${this.onSlime} sand=${this.onSand} wet=${this.onWet} pothole=${this.inPothole} frame=${this.frame.name} body=${b.x.toFixed(0)},${b.y.toFixed(0)} ${b.width}x${b.height} off=${b.offset.x},${b.offset.y}`;
   }
 }

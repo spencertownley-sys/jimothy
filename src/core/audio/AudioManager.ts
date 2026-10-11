@@ -51,6 +51,7 @@ const SFX: Record<string, Tone[]> = {
   chainsaw: [{ f: 110, f2: 140, d: 1.2, w: 'sawtooth', g: 0.08 }],
   truck: [{ f: 70, f2: 50, d: 2.5, w: 'sawtooth', g: 0.08 }],
   steam: [{ f: 2400, f2: 1800, d: 0.3, w: 'triangle', g: 0.05 }],
+  geyser: [{ f: 300, f2: 1400, d: 0.35, w: 'triangle', g: 0.08 }],
 };
 
 // Procedural loops standing in for the real tracks (§7.1). Notes are semitone offsets from A3.
@@ -78,6 +79,10 @@ const TRACKS: Record<string, Track> = {
   market: { bpm: 118, wave: 'triangle', gain: 0.08, bass: [0, 5, 7, 5], arp: [[12, 16, 19, 22], [17, 21, 24, 21], [19, 23, 26, 23], [17, 21, 24, 21]] },
   alley: { bpm: 96, wave: 'sine', gain: 0.08, bass: [0, -2, -4, -5], arp: [[12, 15, 19, 15], [10, 14, 17, 14], [8, 12, 15, 12], [7, 11, 14, 11]] },
   chase: { bpm: 160, wave: 'triangle', gain: 0.07, bass: [0, 0, 5, 7], arp: [[12, 19, 12, 19], [12, 19, 14, 21], [17, 24, 17, 24], [19, 26, 19, 26]] },
+  // "Needle Nights" – World 3, 120 bpm synthwave arpeggios
+  needle: { bpm: 120, wave: 'sawtooth', gain: 0.05, bass: [0, -4, -2, -5], arp: [[12, 15, 19, 24], [8, 12, 15, 20], [10, 14, 17, 22], [7, 11, 14, 19]] },
+  monorail: { bpm: 148, wave: 'square', gain: 0.05, bass: [0, 0, -4, -2], arp: [[12, 19, 24, 19], [12, 19, 24, 19], [8, 15, 20, 15], [10, 17, 22, 17]] },
+  line: { bpm: 118, wave: 'triangle', gain: 0.08, bass: [0, 3, 5, 6], arp: [[12, 15, 17, 18], [15, 18, 20, 22], [17, 20, 22, 24], [18, 22, 24, 22]] },
 };
 
 const A3 = 220;
@@ -113,6 +118,7 @@ const SAMPLE_SFX: Record<string, { file: string; gain: number }> = {
   caw: { file: 'sfx_caw', gain: 0.45 },
   ding: { file: 'sfx_ding', gain: 0.6 },
   whoosh: { file: 'sfx_whoosh', gain: 0.4 },
+  geyser: { file: 'sfx_geyser', gain: 0.45 },
 };
 
 interface MusicFile {
@@ -135,6 +141,9 @@ const MUSIC_FILES: Record<string, MusicFile> = {
   market: { file: 'market', gain: 0.45 }, // "Back in a Jiffy" – Nocturnal Spirits
   alley: { file: 'alley', gain: 0.45 }, // "Tomorrow I'll Be Gone" – Franz Gordon
   chase: { file: 'chase', gain: 0.42 }, // "Late for an Appointment" – Stationary Sign
+  needle: { file: 'needle', gain: 0.42 }, // "Break the Fast" – Vision Heat
+  monorail: { file: 'monorail', gain: 0.4 }, // "Arcadewave" – Lupus Nocte
+  line: { file: 'line', gain: 0.45 }, // "Dubious Intentions" – Ludvig Moulin
 };
 
 type LoadState = 'loading' | 'ready' | 'failed';

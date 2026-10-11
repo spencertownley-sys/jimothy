@@ -7,13 +7,14 @@ import { ENEMIES } from '../../data/entities';
 import type { Player } from '../Player';
 import { Enemy, type EnemyContext } from './Enemy';
 
-type CrowMode = 'walk' | 'shell' | 'slide' | 'fly';
+type CrowMode = 'walk' | 'shell' | 'slide' | 'fly' | 'perch' | 'dive';
 
 /**
  * The Koopa of Seattle: stomp a crow and it tucks into a feathery ball; touch or stomp the ball
  * and it slides, bowling over every enemy in its path. A moving shell hurts Jimothy from the
  * side, exactly like Mario's. `fly: true` makes a crow that patrols the air, carrying a geoduck
- * (`carries: <index>`) that it drops when stomped.
+ * (`carries: <index>`) that it drops when stomped. `dive: true` (the 3-2 monorail) waits up high
+ * and, once Jimothy is in range, dive-bombs the spot where he is and keeps going.
  */
 export class Crow extends Enemy {
   private mode: CrowMode = 'walk';
@@ -30,6 +31,13 @@ export class Crow extends Enemy {
     this.homeY = y;
     if (getProp(obj, 'fly', false)) {
       this.mode = 'fly';
+      this.body.setAllowGravity(false);
+      this.setPose('crow_fly', 56, 46);
+      this.body.setOffset(this.body.offset.x, 4);
+      this.setDepth(9);
+    }
+    if (getProp(obj, 'dive', false)) {
+      this.mode = 'perch';
       this.body.setAllowGravity(false);
       this.setPose('crow_fly', 56, 46);
       this.body.setOffset(this.body.offset.x, 4);
@@ -57,7 +65,34 @@ export class Crow extends Enemy {
         return;
       case 'fly':
         this.fly(ctx);
+        return;
+      case 'perch':
+        this.perch(ctx);
+        return;
+      case 'dive':
+        this.diveOn(ctx);
     }
+  }
+
+  private perch(ctx: EnemyContext): void {
+    this.t += ctx.dtMs / 1000;
+    this.body.setVelocity(0, Math.sin(this.t * 6) * 20);
+    const p = ctx.player;
+    if (Math.abs(p.x - this.x) > CONFIG.CROW_DIVE.TRIGGER_PX || p.fsm === 'Dead') return;
+    // aim once at where he is now, then commit to the line (so you can dodge it)
+    this.mode = 'dive';
+    const dx = p.x - this.x;
+    const dy = p.y - 24 - this.y;
+    const len = Math.hypot(dx, dy) || 1;
+    this.body.setVelocity((dx / len) * CONFIG.CROW_DIVE.SPEED, (dy / len) * CONFIG.CROW_DIVE.SPEED);
+    this.dir = dx < 0 ? -1 : 1;
+    this.applyFacing();
+    AudioManager.sfx('caw');
+  }
+
+  private diveOn(ctx: EnemyContext): void {
+    // gone once it's well past him or off the bottom of the screen
+    if (this.y > ctx.worldHeight + 40 || Math.abs(this.x - ctx.player.x) > CONFIG.WIDTH) this.destroy();
   }
 
   private slide(ctx: EnemyContext): void {
@@ -110,6 +145,8 @@ export class Crow extends Enemy {
     if (!this.alive) return false;
     const away: 1 | -1 = ctx.player.x < this.x ? 1 : -1;
     switch (this.mode) {
+      case 'perch':
+      case 'dive':
       case 'fly':
         AudioManager.sfx('stomp');
         Haptics.pulse('stomp');

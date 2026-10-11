@@ -48,6 +48,24 @@ export const WORLDS: Record<number, WorldDef> = {
       'bg:water': 'backgrounds/water.png',
     },
   },
+  3: {
+    id: 3,
+    name: 'SEATTLE CENTER',
+    mapBg: 'bg:map_center',
+    images: {
+      'tiles:plaza': 'tilesets/plaza.png',
+      // 3-3's rainy street reuses the Post Alley cobbles
+      'tiles:alley': 'tilesets/alley.png',
+      'bg:center_far': 'backgrounds/bg_center_far.jpg',
+      'bg:center_mid': 'backgrounds/bg_center_mid.png',
+      'bg:center_near': 'backgrounds/bg_center_near.png',
+      'bg:downtown_far': 'backgrounds/bg_downtown_far.jpg',
+      'bg:rooftops_mid': 'backgrounds/bg_rooftops_mid.png',
+      'bg:restaurant_mid': 'backgrounds/bg_restaurant_mid.png',
+      'bg:rain': 'backgrounds/rain.jpg',
+      'bg:map_center': 'backgrounds/map_center.jpg',
+    },
+  },
 };
 
 export function worldOf(levelId: string | undefined): WorldDef {

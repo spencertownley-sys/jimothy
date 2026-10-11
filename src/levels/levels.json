@@ -114,6 +114,58 @@
       "x": 1010,
       "y": 470
     },
-    "postcard": "postcard-w2"
+    "postcard": "postcard-w2",
+    "next": "3-1"
+  },
+  {
+    "id": "3-1",
+    "world": 3,
+    "name": "Fountain Plaza",
+    "file": "3-1.tmj",
+    "music": "needle",
+    "parallaxSet": "center",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 120,
+    "next": "3-2",
+    "map": {
+      "x": 430,
+      "y": 170
+    }
+  },
+  {
+    "id": "3-2",
+    "world": 3,
+    "name": "Monorail",
+    "file": "3-2.tmj",
+    "music": "monorail",
+    "parallaxSet": "monorail",
+    "timeLimit": 0,
+    "autoScroll": 140,
+    "wind": 0,
+    "par": 140,
+    "next": "3-3",
+    "map": {
+      "x": 1010,
+      "y": 390
+    }
+  },
+  {
+    "id": "3-3",
+    "world": 3,
+    "name": "The Line",
+    "file": "3-3.tmj",
+    "music": "line",
+    "parallaxSet": "line",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 105,
+    "map": {
+      "x": 210,
+      "y": 440
+    },
+    "postcard": "postcard-w3"
   }
 ]

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG } from '../../config';
 import { AudioManager } from '../../core/audio/AudioManager';
 import { bus, EV } from '../../core/events';
-import type { TiledObjectLike } from '../../core/tiled';
+import { getProp, type TiledObjectLike } from '../../core/tiled';
 import { ENEMIES } from '../../data/entities';
 import type { Player } from '../Player';
 import { Enemy, type EnemyContext } from './Enemy';
@@ -11,16 +11,29 @@ import { Enemy, type EnemyContext } from './Enemy';
  * The Seattle Freeze: a pedestrian staring at a phone who will not move for you. Every 3 s an
  * icy pulse shoves Jimothy back (no damage). Can't be stomped — you bounce off. A Rain Drop
  * (or a kicked shell) thaws them for 3 s: they look up, "oh, hey", and you can walk past.
+ * In The Line (3-3) a `phase` offset makes a queue pulse in a wave, and one Freeze (`gift`) hands
+ * over a geoduck once you've thawed it three times — you can crack the Freeze with persistence.
  */
 export class Freeze extends Enemy {
   private pulseMs: number;
   private thawMs = 0;
   private ring?: Phaser.GameObjects.Image;
+  private hits = 0;
+  private readonly gift: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, obj?: TiledObjectLike) {
     super(scene, x, y, ENEMIES.freeze, obj);
-    this.pulseMs = this.def.params.pulseMs * 0.5;
+    this.pulseMs = this.def.params.pulseMs * 0.5 + getProp(obj, 'phase', 0);
+    this.gift = getProp(obj, 'gift', -1);
     this.body.setImmovable(true);
+  }
+
+  /** The geoduck index this Freeze hands over, once, after enough thaws (else -1). */
+  takeGift(): number {
+    if (this.gift < 0 || this.hits < CONFIG.FREEZE_GIFT_HITS) return -1;
+    this.hits = -Infinity;
+    bus.emit(EV.HUD_TOAST, 'oh — here, you have this');
+    return this.gift;
   }
 
   get thawed(): boolean {
@@ -68,6 +81,7 @@ export class Freeze extends Enemy {
 
   /** Rain Drops and shells thaw instead of defeating. */
   override defeat(): void {
+    this.hits += 1;
     if (this.thawMs > 0) {
       this.thawMs = this.def.params.thawMs;
       return;

@@ -40,4 +40,5 @@ export function spawnEnemy(scene: Phaser.Scene, id: string, x: number, y: number
 
 export { Enemy } from './Enemy';
 export { CanadaGoose } from './CanadaGoose';
+export { Freeze } from './Freeze';
 export type { EnemyContext } from './Enemy';

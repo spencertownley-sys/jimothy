@@ -83,6 +83,21 @@ export const CONFIG = {
   WHEEL_PERIOD_MS: 16000,
   PIG: { STAND_MS: 3000, LATTES: 10 },
   FLOCK: { SPEED: 286, SWOOP_EVERY_MS: 3200, SWOOPERS: 10, SWOOP_SPEED_MUL: 3.1, MAX_LAG_SCREENS: 1.1, RETREAT_SCREENS: 0.75, LATTE_TAX: 10 },
+  // World 3 (Seattle Center at night)
+  // Fountain jets fire on a 2 s cycle; inside a live jet you're launched ~5 tiles up. A short
+  // bubbling warning comes first so the timing is readable.
+  GEYSER: { PERIOD_MS: 2000, ON_MS: 900, WARN_MS: 350, HEIGHT_TILES: 5, BOB_PX: 48, RELAUNCH_FRAC: 0.6, HALF_W: 30 },
+  // the wet plaza: slidier than pavement, gentler than sand
+  WET_FRICTION: 1500,
+  // Auto-scroller (3-2): die once you're this far off the left edge; can't run past the right
+  AUTOSCROLL: { KILL_MARGIN: 40, RIGHT_MARGIN: 36 },
+  // The monorail starts with its rear ~300 px off-screen left (placed so in the map); on the
+  // last straight it pulls REVEAL_PX ahead of the camera so the rear window comes into view.
+  MONORAIL: { REVEAL_PX: 400, CATCH_UP_MS: 2600, STOP_EASE_PX: 260 },
+  // 3-3: rain every 6 s; the tourists' umbrellas (platforms) only open while it rains
+  RAIN: { PERIOD_MS: 6000, WET_MS: 3200, WARN_MS: 600, FADE_MS: 400 },
+  FREEZE_GIFT_HITS: 3,
+  CROW_DIVE: { SPEED: 520, TRIGGER_PX: 760 },
 
   EXIT_BUS_MS: 1400,
   EXIT_BOAT_MS: 2200,
