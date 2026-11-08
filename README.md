@@ -3,6 +3,8 @@
 A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
+**Play it:** https://spencertownley-sys.github.io/jimothy/
+
 **Status:** Worlds 1, 2 and 3 are playable end to end, with saving:
 - **World 1 · Ballard** — 1-1 "Welcome to Ballard" (with the storm-drain bonus room), 1-2 "The
   Locks", 1-3 "Golden Gardens at Dusk" (Canada Goose mini-boss), then the World 1 postcard.
@@ -88,6 +90,14 @@ the spec's 4.0 tiles (asserted in `tests/unit/jump.test.ts`).
 
 ## Deploying
 
-`npm run build` → upload `dist/`. The game is not auto-deployed yet; a GitHub Pages deploy
-workflow is the next step (CLAUDE.md Step 10). CI (`.github/workflows/ci.yml`) runs lint, tests
-and a build on every push and uploads `dist/` as an artifact.
+Every push to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`): lint, unit tests,
+build, then publish `dist/` to https://spencertownley-sys.github.io/jimothy/. It can also be run
+by hand from the Actions tab ("deploy" → Run workflow). One-time setup: Settings → Pages →
+Build and deployment → Source: **GitHub Actions**.
+
+CI (`.github/workflows/ci.yml`) runs lint, tests and a build on every push and pull request and
+uploads `dist/` as an artifact.
+
+Before promoting it widely, confirm the Epidemic Sound plan covers music in a distributed game
+(see `CREDITS.md`); if not, delete the `.mp3` files in `public/assets/audio/` and the game falls
+back to its synthesized music and sound effects.
