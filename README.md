@@ -88,6 +88,6 @@ the spec's 4.0 tiles (asserted in `tests/unit/jump.test.ts`).
 
 ## Deploying
 
-`npm run build` → upload `dist/`. This repository's GitHub Pages serves the blog from the branch
-root, so the game is not auto-deployed yet; a workflow that builds `jimothy/` into a `play/`
-subfolder is the next step.
+`npm run build` → upload `dist/`. The game is not auto-deployed yet; a GitHub Pages deploy
+workflow is the next step (CLAUDE.md Step 10). CI (`.github/workflows/ci.yml`) runs lint, tests
+and a build on every push and uploads `dist/` as an artifact.
