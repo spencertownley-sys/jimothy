@@ -127,7 +127,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.defeat(player.x < this.x ? 1 : -1);
       return;
     }
-    player.hurt();
+    player.hurt(this.def.bird ? 'bird' : 'other');
   }
 
   /** Killed by Flannel, shells, Rain Drops: flip and fall off-screen. */

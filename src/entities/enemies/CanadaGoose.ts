@@ -173,7 +173,7 @@ export class CanadaGoose extends Enemy {
 
   override onHitPlayer(player: Player): void {
     if (this.mode === 'stun' || this.mode === 'sleep' || !this.alive) return;
-    if (player.hurt()) player.knockback(player.x < this.x ? -1 : 1, 360);
+    if (player.hurt('bird')) player.knockback(player.x < this.x ? -1 : 1, 360, 'bird');
   }
 
   /** Rain Drops and shells bounce off. */

@@ -180,6 +180,6 @@ export class Crow extends Enemy {
       return;
     }
     if (this.mode === 'slide' && this.kickGraceMs > 0) return;
-    player.hurt();
+    player.hurt('bird');
   }
 }

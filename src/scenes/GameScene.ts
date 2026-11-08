@@ -819,13 +819,13 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   /** FlockHost: caught — the flock takes the power-up (or a latte tax when he has none). */
   flockCaught(): void {
     AudioManager.sfx('squawk');
-    if (this.player.stripPower()) {
+    if (this.player.stripPower('bird')) {
       this.toast('SQUAWK!');
       return;
     }
     const lost = Math.min(this.run.lattes, CONFIG.FLOCK.LATTE_TAX);
     this.run.lattes -= lost;
-    this.player.knockback(1, 380);
+    this.player.knockback(1, 380, 'bird');
     this.toast(lost > 0 ? `-${lost} ☕` : 'SQUAWK!');
     this.pushHud();
   }

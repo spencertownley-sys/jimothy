@@ -6,6 +6,9 @@ import type { InputState } from '../core/input/InputState';
 import { jumpGravityScale, startJump, type JumpState } from '../core/physics/jump';
 import { powerAfterHit, type PowerUpKind } from '../data/powerups';
 
+/** What hit him; birds get their own peck-peck-thump buzz. */
+export type HurtCause = 'bird' | 'other';
+
 export type PlayerFsm =
   | 'Idle' | 'Run' | 'Jump' | 'Fall' | 'Crouch' | 'CrouchWalk' | 'Skid'
   | 'Hurt' | 'Dead' | 'Grow' | 'Shrink' | 'Throw' | 'Victory';
@@ -324,7 +327,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Returns true if the hit landed (false while invulnerable / frozen / dead). */
-  hurt(): boolean {
+  hurt(cause: HurtCause = 'other'): boolean {
     if (this.invulnerable || this.fsm === 'Dead' || this.fsm === 'Victory' || this.freezeMs > 0) return false;
     const next = powerAfterHit(this.power);
     this.hitsTaken += 1;
@@ -333,7 +336,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return true;
     }
     AudioManager.sfx('hurt');
-    Haptics.pulse('hurt');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'hurt');
     this.power = next;
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     this.freezeMs = CONFIG.GROW_FREEZE_MS;
@@ -345,11 +348,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Freeze-pulse style shove: no damage, short i-frames so pulses can't chain-stun. */
-  knockback(dirX: 1 | -1, speed: number): void {
+  knockback(dirX: 1 | -1, speed: number, cause: HurtCause = 'other'): void {
     if (this.fsm === 'Dead' || this.fsm === 'Victory') return;
     this.body.setVelocity(dirX * speed, -260);
     this.carryVx = 0; // the shove replaces whatever he was riding
-    Haptics.pulse('stomp');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'stomp');
     if (this.iframesMs < CONFIG.KNOCKBACK_IFRAMES_MS) this.iframesMs = CONFIG.KNOCKBACK_IFRAMES_MS;
   }
 
@@ -422,12 +425,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** The seagull flock steals his power-up: back to small, no damage, short i-frames. */
-  stripPower(): boolean {
+  stripPower(cause: HurtCause = 'other'): boolean {
     if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable) return false;
     this.setPower('small', 'Shrink');
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     AudioManager.sfx('hurt');
-    Haptics.pulse('hurt');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'hurt');
     return true;
   }
 
