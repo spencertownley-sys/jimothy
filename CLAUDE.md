@@ -122,7 +122,7 @@ jimothy/
 ### Step 10 — Polish & QA
 - [ ] Run `docs/07_QA_CHECKLIST.md`
 - [ ] Lighthouse: initial load ≤ 6 MB, interactive < 3 s on fast 3G
-- [ ] Deploy workflow to GitHub Pages
+- [x] Deploy workflow to GitHub Pages (`.github/workflows/deploy.yml`)
 
 ### Step 11 (v2) — Capacitor
 - [ ] `npx cap init`, add ios/android, lock landscape, haptics on stomp/hurt/1-up, pause on background, safe areas → TouchControls
