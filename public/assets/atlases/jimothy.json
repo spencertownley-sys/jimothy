@@ -1,0 +1,334 @@
+{
+ "frames": {
+  "big_hop": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 95,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 95,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 95,
+    "h": 94
+   }
+  },
+  "big_hurt": {
+   "frame": {
+    "x": 99,
+    "y": 2,
+    "w": 86,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 86,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 86,
+    "h": 94
+   }
+  },
+  "big_idle": {
+   "frame": {
+    "x": 187,
+    "y": 2,
+    "w": 99,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 99,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 99,
+    "h": 94
+   }
+  },
+  "big_look": {
+   "frame": {
+    "x": 288,
+    "y": 2,
+    "w": 62,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 94
+   }
+  },
+  "big_lope": {
+   "frame": {
+    "x": 352,
+    "y": 2,
+    "w": 116,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 94
+   }
+  },
+  "big_victory": {
+   "frame": {
+    "x": 470,
+    "y": 2,
+    "w": 80,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 94
+   }
+  },
+  "flannel_idle": {
+   "frame": {
+    "x": 552,
+    "y": 2,
+    "w": 100,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 100,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 100,
+    "h": 94
+   }
+  },
+  "jacket_idle": {
+   "frame": {
+    "x": 654,
+    "y": 2,
+    "w": 90,
+    "h": 94
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 94
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 94
+   }
+  },
+  "small_hop": {
+   "frame": {
+    "x": 746,
+    "y": 2,
+    "w": 72,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 72
+   }
+  },
+  "small_hurt": {
+   "frame": {
+    "x": 820,
+    "y": 2,
+    "w": 66,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 66,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 66,
+    "h": 72
+   }
+  },
+  "small_idle": {
+   "frame": {
+    "x": 888,
+    "y": 2,
+    "w": 54,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 54,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 54,
+    "h": 72
+   }
+  },
+  "small_look": {
+   "frame": {
+    "x": 944,
+    "y": 2,
+    "w": 47,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 47,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 47,
+    "h": 72
+   }
+  },
+  "small_lope": {
+   "frame": {
+    "x": 993,
+    "y": 2,
+    "w": 89,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 89,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 89,
+    "h": 72
+   }
+  },
+  "small_victory": {
+   "frame": {
+    "x": 1084,
+    "y": 2,
+    "w": 62,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 72
+   }
+  },
+  "big_crouch": {
+   "frame": {
+    "x": 1148,
+    "y": 2,
+    "w": 93,
+    "h": 52
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 93,
+    "h": 52
+   },
+   "sourceSize": {
+    "w": 93,
+    "h": 52
+   }
+  },
+  "small_crouch": {
+   "frame": {
+    "x": 1243,
+    "y": 2,
+    "w": 71,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 71,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 71,
+    "h": 40
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "jimothy.png",
+  "size": {
+   "w": 1316,
+   "h": 98
+  },
+  "scale": "1"
+ }
+}

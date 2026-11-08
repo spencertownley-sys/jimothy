@@ -1,0 +1,774 @@
+{
+ "frames": {
+  "wheel": {
+   "frame": {
+    "x": 2,
+    "y": 2,
+    "w": 388,
+    "h": 480
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 388,
+    "h": 480
+   },
+   "sourceSize": {
+    "w": 388,
+    "h": 480
+   }
+  },
+  "cedar": {
+   "frame": {
+    "x": 392,
+    "y": 2,
+    "w": 223,
+    "h": 430
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 223,
+    "h": 430
+   },
+   "sourceSize": {
+    "w": 223,
+    "h": 430
+   }
+  },
+  "signboard": {
+   "frame": {
+    "x": 617,
+    "y": 2,
+    "w": 320,
+    "h": 325
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 325
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 325
+   }
+  },
+  "bathhouse": {
+   "frame": {
+    "x": 939,
+    "y": 2,
+    "w": 634,
+    "h": 300
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 634,
+    "h": 300
+   },
+   "sourceSize": {
+    "w": 634,
+    "h": 300
+   }
+  },
+  "billboard": {
+   "frame": {
+    "x": 1575,
+    "y": 2,
+    "w": 300,
+    "h": 296
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 300,
+    "h": 296
+   },
+   "sourceSize": {
+    "w": 300,
+    "h": 296
+   }
+  },
+  "fry": {
+   "frame": {
+    "x": 1877,
+    "y": 2,
+    "w": 130,
+    "h": 260
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 130,
+    "h": 260
+   },
+   "sourceSize": {
+    "w": 130,
+    "h": 260
+   }
+  },
+  "lamp": {
+   "frame": {
+    "x": 2,
+    "y": 484,
+    "w": 92,
+    "h": 260
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 92,
+    "h": 260
+   },
+   "sourceSize": {
+    "w": 92,
+    "h": 260
+   }
+  },
+  "fountainkids": {
+   "frame": {
+    "x": 96,
+    "y": 484,
+    "w": 463,
+    "h": 200
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 463,
+    "h": 200
+   },
+   "sourceSize": {
+    "w": 463,
+    "h": 200
+   }
+  },
+  "soldout": {
+   "frame": {
+    "x": 561,
+    "y": 484,
+    "w": 109,
+    "h": 170
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 109,
+    "h": 170
+   },
+   "sourceSize": {
+    "w": 109,
+    "h": 170
+   }
+  },
+  "wavyroof": {
+   "frame": {
+    "x": 672,
+    "y": 484,
+    "w": 300,
+    "h": 153
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 300,
+    "h": 153
+   },
+   "sourceSize": {
+    "w": 300,
+    "h": 153
+   }
+  },
+  "busstop": {
+   "frame": {
+    "x": 974,
+    "y": 484,
+    "w": 78,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 78,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 78,
+    "h": 150
+   }
+  },
+  "sealion": {
+   "frame": {
+    "x": 1054,
+    "y": 484,
+    "w": 263,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 263,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 263,
+    "h": 150
+   }
+  },
+  "stagedoor": {
+   "frame": {
+    "x": 1319,
+    "y": 484,
+    "w": 100,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 100,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 100,
+    "h": 150
+   }
+  },
+  "beam": {
+   "frame": {
+    "x": 1421,
+    "y": 484,
+    "w": 288,
+    "h": 139
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 139
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 139
+   }
+  },
+  "glasstube": {
+   "frame": {
+    "x": 1711,
+    "y": 484,
+    "w": 300,
+    "h": 121
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 300,
+    "h": 121
+   },
+   "sourceSize": {
+    "w": 300,
+    "h": 121
+   }
+  },
+  "fishstall": {
+   "frame": {
+    "x": 2,
+    "y": 746,
+    "w": 128,
+    "h": 110
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 110
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 110
+   }
+  },
+  "tourist": {
+   "frame": {
+    "x": 132,
+    "y": 746,
+    "w": 63,
+    "h": 110
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 63,
+    "h": 110
+   },
+   "sourceSize": {
+    "w": 63,
+    "h": 110
+   }
+  },
+  "awning": {
+   "frame": {
+    "x": 197,
+    "y": 746,
+    "w": 200,
+    "h": 106
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 200,
+    "h": 106
+   },
+   "sourceSize": {
+    "w": 200,
+    "h": 106
+   }
+  },
+  "column": {
+   "frame": {
+    "x": 399,
+    "y": 746,
+    "w": 14,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 14,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 14,
+    "h": 96
+   }
+  },
+  "fishwindow": {
+   "frame": {
+    "x": 415,
+    "y": 746,
+    "w": 71,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 71,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 71,
+    "h": 96
+   }
+  },
+  "freebox": {
+   "frame": {
+    "x": 488,
+    "y": 746,
+    "w": 99,
+    "h": 96
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 99,
+    "h": 96
+   },
+   "sourceSize": {
+    "w": 99,
+    "h": 96
+   }
+  },
+  "beachsign": {
+   "frame": {
+    "x": 589,
+    "y": 746,
+    "w": 58,
+    "h": 84
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 58,
+    "h": 84
+   },
+   "sourceSize": {
+    "w": 58,
+    "h": 84
+   }
+  },
+  "lifering": {
+   "frame": {
+    "x": 649,
+    "y": 746,
+    "w": 59,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 59,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 59,
+    "h": 80
+   }
+  },
+  "bin_black": {
+   "frame": {
+    "x": 710,
+    "y": 746,
+    "w": 54,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 54,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 54,
+    "h": 72
+   }
+  },
+  "bin_blue": {
+   "frame": {
+    "x": 766,
+    "y": 746,
+    "w": 56,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 72
+   }
+  },
+  "bin_green": {
+   "frame": {
+    "x": 824,
+    "y": 746,
+    "w": 55,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 55,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 55,
+    "h": 72
+   }
+  },
+  "picnic": {
+   "frame": {
+    "x": 881,
+    "y": 746,
+    "w": 113,
+    "h": 72
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 113,
+    "h": 72
+   },
+   "sourceSize": {
+    "w": 113,
+    "h": 72
+   }
+  },
+  "dunegrass": {
+   "frame": {
+    "x": 996,
+    "y": 746,
+    "w": 60,
+    "h": 70
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 60,
+    "h": 70
+   },
+   "sourceSize": {
+    "w": 60,
+    "h": 70
+   }
+  },
+  "stump": {
+   "frame": {
+    "x": 1058,
+    "y": 746,
+    "w": 101,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 101,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 101,
+    "h": 64
+   }
+  },
+  "compost": {
+   "frame": {
+    "x": 1161,
+    "y": 746,
+    "w": 57,
+    "h": 62
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 62
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 62
+   }
+  },
+  "crownest": {
+   "frame": {
+    "x": 1220,
+    "y": 746,
+    "w": 79,
+    "h": 60
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 79,
+    "h": 60
+   },
+   "sourceSize": {
+    "w": 79,
+    "h": 60
+   }
+  },
+  "driftstump": {
+   "frame": {
+    "x": 1301,
+    "y": 746,
+    "w": 59,
+    "h": 60
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 59,
+    "h": 60
+   },
+   "sourceSize": {
+    "w": 59,
+    "h": 60
+   }
+  },
+  "fern": {
+   "frame": {
+    "x": 1362,
+    "y": 746,
+    "w": 83,
+    "h": 60
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 60
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 60
+   }
+  },
+  "bollard": {
+   "frame": {
+    "x": 1447,
+    "y": 746,
+    "w": 42,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 42,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 42,
+    "h": 56
+   }
+  },
+  "stones": {
+   "frame": {
+    "x": 1491,
+    "y": 746,
+    "w": 67,
+    "h": 52
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 52
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 52
+   }
+  },
+  "lantern": {
+   "frame": {
+    "x": 1560,
+    "y": 746,
+    "w": 34,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 34,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 34,
+    "h": 44
+   }
+  },
+  "rope": {
+   "frame": {
+    "x": 1596,
+    "y": 746,
+    "w": 55,
+    "h": 36
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 55,
+    "h": 36
+   },
+   "sourceSize": {
+    "w": 55,
+    "h": 36
+   }
+  },
+  "puddle": {
+   "frame": {
+    "x": 1653,
+    "y": 746,
+    "w": 96,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 96,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 96,
+    "h": 34
+   }
+  }
+ },
+ "meta": {
+  "app": "jimothy/pack-atlases",
+  "version": "1",
+  "image": "props.png",
+  "size": {
+   "w": 2013,
+   "h": 858
+  },
+  "scale": "1"
+ }
+}

@@ -1,0 +1,108 @@
+// Every tunable number in the game lives here (Tech Spec §3). Gameplay code never carries
+// magic numbers. Units: px, px/s, px/s², ms at the 1280×720 logical resolution.
+export const CONFIG = {
+  WIDTH: 1280,
+  HEIGHT: 720,
+  TILE: 48,
+  FIXED_FPS: 60,
+
+  GRAVITY: 2200,
+  WALK_MAX: 260,
+  RUN_MAX: 420,
+  CROUCH_WALK_MAX: 110,
+  ACCEL_GROUND: 1800,
+  ACCEL_AIR: 1200,
+  FRICTION: 2400,
+  AIR_DRAG: 300,
+  SLIME_FRICTION: 400,
+  // Golden Gardens sand: a touch slidier than pavement, nowhere near slime
+  SAND_FRICTION: 1300,
+  MAX_FALL_SPEED: 1100,
+  MAX_RISE_SPEED: 1800,
+
+  JUMP_VELOCITY: -760,
+  JUMP_HOLD_MS: 250,
+  // The spec lists 0.45 here, but with GRAVITY 2200 / JUMP_VELOCITY -760 that gives a 4.6-tile
+  // full jump. 0.6 lands the full-hold apex on the spec's ≈4.0 tiles (see tests/unit/jump.test.ts).
+  JUMP_HOLD_GRAVITY_SCALE: 0.6,
+  // Releasing early trims upward speed so a tap reads as a ≈2-tile hop (Mario-style jump cut).
+  JUMP_CUT_FACTOR: 0.85,
+  RUN_JUMP_BONUS: -90,
+  RUN_JUMP_THRESHOLD: 350,
+  COYOTE_MS: 90,
+  JUMP_BUFFER_MS: 120,
+  STOMP_BOUNCE: -420,
+  STOMP_BOUNCE_HELD: -640,
+  SKID_MIN_SPEED: 150,
+
+  HURT_IFRAMES_MS: 1500,
+  KNOCKBACK_IFRAMES_MS: 400,
+  GROW_FREEZE_MS: 400,
+  DEATH_HOP_VELOCITY: -620,
+  DEATH_WAIT_MS: 1800,
+
+  HITBOX: {
+    small: { w: 56, h: 48 },
+    big: { w: 72, h: 62 },
+    crouchSmall: { w: 56, h: 24 },
+    crouchBig: { w: 72, h: 30 },
+  },
+
+  POTHOLE_SLOW: 0.5,
+  FLANNEL_MS: 10000,
+  DOUBLE_SHOT_MS: 8000,
+  POWERUP_WALK_SPEED: 120,
+  POWERUP_RISE_MS: 500,
+  LATTES_PER_LIFE: 100,
+  START_LIVES: 3,
+  LATTE_BLOCK_BURST: 1,
+
+  STOMP_TOLERANCE: 14,
+  ENEMY_FREEZE_SCREENS: 1.5,
+  ENEMY_DESPAWN_MARGIN: 200,
+  RAINDROP_MAX: 2,
+
+  CAMERA: { DEADZONE_W: 200, DEADZONE_H: 120, LERP: 0.12, LOOKAHEAD: 60, LOOKAHEAD_LERP: 0.05 },
+  PARALLAX_FACTORS: [0.1, 0.4, 0.75] as const,
+  MUSIC_CROSSFADE_MS: 600,
+  TILE_BIAS: 24,
+
+  // 1-2 / 1-3 mechanisms (docs/03_LEVEL_SPECS.md)
+  SALMON: { UNDER_MS: 1100, RISE_MS: 320, HOLD_MS: 1200, FALL_MS: 380, WARN_MS: 350 },
+  LOCKGATE: { UP_MS: 2400, MOVE_MS: 1100, DOWN_MS: 2400 },
+  SEESAW: { LAUNCH_VY: -1100, SOFT_VY: -820, MIN_LAND_VY: 180, TILT_DEG: 11 },
+  BONFIRE_KNOCKBACK: 360,
+  SLIME: { DROP_EVERY_PX: 40, LIFE_MS: 9000, MAX: 40 },
+  SHELL_KICK_GRACE_MS: 220,
+  WATER_SINK_PX: 14,
+  CAMERA_FLASH_MS: 650,
+  // World 2 (Pike Place)
+  GUM_SLIDE_SPEED: 70,
+  BOUNCE: { DAHLIA: -1060, DAHLIA_SOFT: -760, SCOOTER: -1450, SCOOTER_SOFT: -900, MIN_LAND_VY: 120 },
+  SALMON_THROW: { FLY_MS: 2300, HOLD_MS: 900 },
+  WHEEL_PERIOD_MS: 16000,
+  PIG: { STAND_MS: 3000, LATTES: 10 },
+  FLOCK: { SPEED: 286, SWOOP_EVERY_MS: 3200, SWOOPERS: 10, SWOOP_SPEED_MUL: 3.1, MAX_LAG_SCREENS: 1.1, RETREAT_SCREENS: 0.75, LATTE_TAX: 10 },
+  // World 3 (Seattle Center at night)
+  // Fountain jets fire on a 2 s cycle; inside a live jet you're launched ~5 tiles up. A short
+  // bubbling warning comes first so the timing is readable.
+  GEYSER: { PERIOD_MS: 2000, ON_MS: 900, WARN_MS: 350, HEIGHT_TILES: 5, BOB_PX: 48, RELAUNCH_FRAC: 0.6, HALF_W: 30 },
+  // the wet plaza: slidier than pavement, gentler than sand
+  WET_FRICTION: 1500,
+  // Auto-scroller (3-2): die once you're this far off the left edge; can't run past the right
+  AUTOSCROLL: { KILL_MARGIN: 40, RIGHT_MARGIN: 36 },
+  // The monorail starts with its rear ~300 px off-screen left (placed so in the map); on the
+  // last straight it pulls REVEAL_PX ahead of the camera so the rear window comes into view.
+  MONORAIL: { REVEAL_PX: 400, CATCH_UP_MS: 2600, STOP_EASE_PX: 260 },
+  // 3-3: rain every 6 s; the tourists' umbrellas (platforms) only open while it rains
+  RAIN: { PERIOD_MS: 6000, WET_MS: 3200, WARN_MS: 600, FADE_MS: 400 },
+  FREEZE_GIFT_HITS: 3,
+  CROW_DIVE: { SPEED: 520, TRIGGER_PX: 760 },
+
+  EXIT_BUS_MS: 1400,
+  EXIT_BOAT_MS: 2200,
+  IDLE_LOOK_MS: 8000,
+  DEBUG_KEY: 'Backquote',
+} as const;
+
+export type PowerState = 'small' | 'big' | 'jacket';

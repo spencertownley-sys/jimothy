@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="description" content="JIMOTHY: A Seattle Story — a cozy Mario-style platformer starring Ballard's short-spined raccoon. Unofficial fan game." />
+    <meta property="og:title" content="Jimothy: A Seattle Story" />
+    <meta property="og:image" content="assets/backgrounds/title_keyart.jpg" />
+    <meta name="theme-color" content="#1F3A33" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦝</text></svg>" />
+    <title>Jimothy: A Seattle Story</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #1F3A33; overflow: hidden; overscroll-behavior: none; }
+      body { display: flex; align-items: center; justify-content: center; touch-action: none; -webkit-user-select: none; user-select: none; }
+      #game { width: 100vw; height: 100vh; }
+      #game canvas { display: block; image-rendering: auto; }
+      #rotate { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; color: #F4EFE6;
+        background: #1F3A33; font: 600 22px/1.4 "Fredoka", "Baloo 2", "Nunito", "Trebuchet MS", sans-serif; text-align: center; z-index: 10; }
+      @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="rotate">Rotate your phone 🦝<br /><small>Jimothy plays in landscape.</small></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,171 @@
+[
+  {
+    "id": "1-1",
+    "world": 1,
+    "name": "Welcome to Ballard",
+    "file": "1-1.tmj",
+    "music": "ballard",
+    "parallaxSet": "ballard",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 90,
+    "next": "1-2",
+    "map": {
+      "x": 860,
+      "y": 420
+    }
+  },
+  {
+    "id": "1-1-bonus",
+    "world": 1,
+    "name": "Storm Drain",
+    "file": "1-1-bonus.tmj",
+    "music": "drain",
+    "parallaxSet": "drain",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 0,
+    "hidden": true,
+    "parent": "1-1"
+  },
+  {
+    "id": "1-2",
+    "world": 1,
+    "name": "The Locks",
+    "file": "1-2.tmj",
+    "music": "ballard",
+    "parallaxSet": "locks",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 120,
+    "next": "1-3",
+    "map": {
+      "x": 262,
+      "y": 486
+    }
+  },
+  {
+    "id": "1-3",
+    "world": 1,
+    "name": "Golden Gardens at Dusk",
+    "file": "1-3.tmj",
+    "music": "dusk",
+    "parallaxSet": "beach",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 105,
+    "map": {
+      "x": 484,
+      "y": 262
+    },
+    "postcard": "postcard-w1",
+    "next": "2-1"
+  },
+  {
+    "id": "2-1",
+    "world": 2,
+    "name": "Market Arcade",
+    "file": "2-1.tmj",
+    "music": "market",
+    "parallaxSet": "pike",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 135,
+    "next": "2-2",
+    "map": {
+      "x": 420,
+      "y": 236
+    }
+  },
+  {
+    "id": "2-2",
+    "world": 2,
+    "name": "The Gum Wall",
+    "file": "2-2.tmj",
+    "music": "alley",
+    "parallaxSet": "alley",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 150,
+    "next": "2-3",
+    "map": {
+      "x": 830,
+      "y": 214
+    }
+  },
+  {
+    "id": "2-3",
+    "world": 2,
+    "name": "Waterfront Run",
+    "file": "2-3.tmj",
+    "music": "chase",
+    "parallaxSet": "waterfront",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 120,
+    "map": {
+      "x": 1010,
+      "y": 470
+    },
+    "postcard": "postcard-w2",
+    "next": "3-1"
+  },
+  {
+    "id": "3-1",
+    "world": 3,
+    "name": "Fountain Plaza",
+    "file": "3-1.tmj",
+    "music": "needle",
+    "parallaxSet": "center",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 120,
+    "next": "3-2",
+    "map": {
+      "x": 430,
+      "y": 170
+    }
+  },
+  {
+    "id": "3-2",
+    "world": 3,
+    "name": "Monorail",
+    "file": "3-2.tmj",
+    "music": "monorail",
+    "parallaxSet": "monorail",
+    "timeLimit": 0,
+    "autoScroll": 140,
+    "wind": 0,
+    "par": 140,
+    "next": "3-3",
+    "map": {
+      "x": 1010,
+      "y": 390
+    }
+  },
+  {
+    "id": "3-3",
+    "world": 3,
+    "name": "The Line",
+    "file": "3-3.tmj",
+    "music": "line",
+    "parallaxSet": "line",
+    "timeLimit": 0,
+    "autoScroll": 0,
+    "wind": 0,
+    "par": 105,
+    "map": {
+      "x": 210,
+      "y": 440
+    },
+    "postcard": "postcard-w3"
+  }
+]
