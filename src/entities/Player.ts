@@ -121,7 +121,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (grounded) {
       this.coyoteMs = CONFIG.COYOTE_MS;
       if (!this.wasGrounded) AudioManager.sfx('land');
-      this.jump.jumping = false;
+      // only a real landing ends the jump; a rising platform can still flag "touching" the step
+      // after takeoff, and dropping the hold bookkeeping there turned a full jump into a short one
+      if (this.body.velocity.y >= 0) this.jump.jumping = false;
     } else {
       this.coyoteMs -= dtMs;
     }
@@ -163,6 +165,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.body.setVelocityY(this.jump.vy);
       this.bufferMs = 0;
       this.coyoteMs = 0;
+      this.launchMs = CONFIG.JUMP_TAKEOFF_MS;
       AudioManager.sfx('jump');
     }
     this.jump.vy = this.body.velocity.y;
@@ -315,7 +318,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Thrown upward by something else (stomp, see-saw). Holding jump keeps the floaty rise. */
   launch(vy: number, held: boolean): void {
     this.body.setVelocityY(vy);
-    this.launchMs = 80;
+    this.launchMs = CONFIG.JUMP_TAKEOFF_MS;
     this.jump = { vy, holdMs: CONFIG.JUMP_HOLD_MS, jumping: true, cut: !held };
     this.coyoteMs = 0;
   }
