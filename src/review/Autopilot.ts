@@ -13,6 +13,8 @@ import type { GameScene } from '../scenes/GameScene';
  * - `wait`  stand still for `ms`
  * - `until` hold `dir` (default: stand still) until the predicate is true (gates, geysers…)
  * - `press` hold `down` or `a` for `ms`
+ * - `ride`  auto-scrollers: hold this fraction of the screen width, ducking and hopping what the
+ *           scroll carries into him, `until` the predicate is true
  * - `note`  just a caption on the timeline
  *
  * Any instruction can carry a `note` (the caption shown when it starts) and a `when` guard.
@@ -28,6 +30,7 @@ type RouteStep =
   | { wait: number; note?: string }
   | { until: (gs: GameScene) => boolean; dir?: -1 | 0 | 1; sprint?: boolean; max?: number; note?: string }
   | { press: 'down' | 'a'; ms: number; dir?: -1 | 0 | 1; note?: string }
+  | { ride: number; until: (gs: GameScene) => boolean; max?: number; note?: string }
   | { note: string };
 
 /** A tile column, or a function of the game state giving one (e.g. "wherever the goose is"). */
@@ -157,6 +160,14 @@ export class Autopilot {
       this.holdJump(out, p.body.velocity.y);
       return this.cmdMs >= cmd.wait;
     }
+    if ('ride' in cmd) {
+      const tx = gs.reviewScrollX + CONFIG.WIDTH * cmd.ride;
+      const dx = tx - p.x;
+      const move = Math.abs(dx) > 24;
+      // the world scrolls into him from the right, so obstacles are always checked ahead
+      this.drive(gs, out, move && dx < 0 ? -1 : 1, false, false, move);
+      return cmd.until(gs) || this.cmdMs >= (cmd.max ?? AUTOPILOT.CMD_TIMEOUT_MS * 4);
+    }
     if ('until' in cmd) {
       if (cmd.dir) this.drive(gs, out, cmd.dir, cmd.sprint === true, false);
       return cmd.until(gs) || this.cmdMs >= (cmd.max ?? AUTOPILOT.CMD_TIMEOUT_MS);
@@ -170,10 +181,10 @@ export class Autopilot {
   }
 
   /** Walk/run one way, hopping walls, gaps and anything he's stuck on. */
-  private drive(gs: GameScene, out: InputSnapshot, dir: 1 | -1, sprint: boolean, noJump: boolean): void {
+  private drive(gs: GameScene, out: InputSnapshot, dir: 1 | -1, sprint: boolean, noJump: boolean, press = true): void {
     const p = gs.player;
     const b = p.body;
-    out[dir > 0 ? 'right' : 'left'] = true;
+    if (press) out[dir > 0 ? 'right' : 'left'] = true;
     out.b = sprint;
     if (this.jumping) {
       this.holdJump(out, b.velocity.y);
@@ -208,14 +219,14 @@ export class Autopilot {
         }
         this.crouchUnder = false;
       }
-      if (high && !low && p.power !== 'small' && !gs.reviewSolidAt(wx, feet - CONFIG.HITBOX.crouchBig.h - 2, true)) {
+      if (high && !low && !gs.reviewSolidAt(wx, feet - CONFIG.HITBOX.crouchBig.h - 2, true)) {
         this.crouchUnder = true;
         out.down = true;
         this.lastX = NaN;
         return;
       }
     }
-    if (Number.isFinite(this.lastX) && Math.abs(p.x - this.lastX) < 0.5) this.stuckMs += STEP_MS;
+    if (press && Number.isFinite(this.lastX) && Math.abs(p.x - this.lastX) < 0.5) this.stuckMs += STEP_MS;
     else this.stuckMs = 0;
     this.lastX = p.x;
     if ((low || high || !floor || this.stuckMs >= AUTOPILOT.STUCK_MS) && !this.wasJumpDown) {
