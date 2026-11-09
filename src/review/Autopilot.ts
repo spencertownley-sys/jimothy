@@ -7,24 +7,34 @@ import type { GameScene } from '../scenes/GameScene';
  * the autopilot aims for the middle of the column.
  *
  * - `to`    run (or `sprint`) to a column, hopping walls and gaps on its own
- * - `jump`  jump now, holding the button `hold` ms (250 = full height), steering `dir` or
- *           toward column `to` until he lands
+ * - `jump`  jump now, holding the button `jump` ms (250 = full height), steering `dir` or
+ *           toward column `to` until he lands (or `done` says so); `keep` holds the button
+ *           through the landing (see-saws)
  * - `wait`  stand still for `ms`
  * - `until` hold `dir` (default: stand still) until the predicate is true (gates, geysers…)
  * - `press` hold `down` or `a` for `ms`
  * - `note`  just a caption on the timeline
  *
- * Any instruction can carry a `note`: the caption shown when it starts.
+ * Any instruction can carry a `note` (the caption shown when it starts) and a `when` guard.
  */
-export type RouteCmd =
-  | { to: number; sprint?: boolean; crouch?: boolean; noJump?: boolean; air?: boolean; tol?: number; note?: string }
-  | { jump: number; dir?: -1 | 0 | 1; to?: number; sprint?: boolean; note?: string }
+export type RouteCmd = RouteStep & {
+  /** only run this instruction if true when it comes up (boss rounds until the boss is gone) */
+  when?: (gs: GameScene) => boolean;
+};
+
+type RouteStep =
+  | { to: Col; sprint?: boolean; crouch?: boolean; noJump?: boolean; air?: boolean; holdJump?: boolean; tol?: number; note?: string }
+  | { jump: number; dir?: -1 | 0 | 1; to?: Col; sprint?: boolean; keep?: boolean; done?: (gs: GameScene) => boolean; note?: string }
   | { wait: number; note?: string }
   | { until: (gs: GameScene) => boolean; dir?: -1 | 0 | 1; sprint?: boolean; max?: number; note?: string }
   | { press: 'down' | 'a'; ms: number; dir?: -1 | 0 | 1; note?: string }
   | { note: string };
 
+/** A tile column, or a function of the game state giving one (e.g. "wherever the goose is"). */
+export type Col = number | ((gs: GameScene) => number);
+
 const T = CONFIG.TILE;
+const colX = (c: Col, gs: GameScene): number => (typeof c === 'function' ? c(gs) : c) * T + T / 2;
 const STEP_MS = 1000 / CONFIG.FIXED_FPS;
 
 /** Autopilot tuning: how far ahead it looks, how long it waits before deciding it's stuck. */
@@ -66,6 +76,11 @@ export class Autopilot {
 
   constructor(private readonly route: readonly RouteCmd[]) {}
 
+  /** which instruction is running (dev probes print it) */
+  get index(): number {
+    return this.idx;
+  }
+
   get done(): boolean {
     return this.idx >= this.route.length;
   }
@@ -75,6 +90,8 @@ export class Autopilot {
     const out = emptySnapshot();
     const p = gs.player;
     if (!p || p.fsm === 'Dead' || p.fsm === 'Victory') return out;
+    // skip instructions whose guard says no
+    while (!this.started && this.route[this.idx]?.when && !this.route[this.idx].when!(gs)) this.idx += 1;
     // finished the script: keep walking right (most levels end at the exit on the right)
     const cmd = this.route[this.idx];
     if (!cmd) {
@@ -103,7 +120,7 @@ export class Autopilot {
     const p = gs.player;
     const grounded = p.lastGrounded;
     if ('to' in cmd && !('jump' in cmd)) {
-      const tx = cmd.to * T + T / 2;
+      const tx = colX(cmd.to, gs);
       const dx = tx - p.x;
       const tol = cmd.tol ?? AUTOPILOT.ARRIVE_TOL;
       if (Math.abs(dx) <= tol) {
@@ -112,20 +129,26 @@ export class Autopilot {
       }
       if (cmd.crouch) out.down = true;
       this.drive(gs, out, dx > 0 ? 1 : -1, cmd.sprint === true, cmd.noJump === true);
+      // riding a launch: keep the button down for the floaty rise
+      if (cmd.holdJump && !grounded) out.jump = true;
       return false;
     }
     if ('jump' in cmd) {
-      const dir = cmd.to !== undefined ? Math.sign(cmd.to * T + T / 2 - p.x) : (cmd.dir ?? 0);
-      if (cmd.to !== undefined && Math.abs(cmd.to * T + T / 2 - p.x) <= AUTOPILOT.ARRIVE_TOL) {
+      const tx = cmd.to !== undefined ? colX(cmd.to, gs) : NaN;
+      const dir = cmd.to !== undefined ? Math.sign(tx - p.x) : (cmd.dir ?? 0);
+      if (cmd.to !== undefined && Math.abs(tx - p.x) <= AUTOPILOT.ARRIVE_TOL) {
         // over the target: stop steering and drop onto it
       } else if (dir > 0) out.right = true;
       else if (dir < 0) out.left = true;
       out.b = cmd.sprint === true;
+      if (this.leftGround && cmd.done?.(gs)) return true;
       if (!this.jumping && !this.leftGround) {
         if (grounded && !this.wasJumpDown) this.startJump(out, cmd.jump);
         return false;
       }
-      this.holdJump(out, p.body.velocity.y);
+      // keep: hold the button all the way down too (see-saws and bounce pads launch higher)
+      if (cmd.keep) out.jump = true;
+      else this.holdJump(out, p.body.velocity.y);
       if (!grounded) this.leftGround = true;
       return this.leftGround && grounded && p.body.velocity.y >= 0;
     }

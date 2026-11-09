@@ -110,11 +110,11 @@ export class ReviewScene extends Phaser.Scene {
   }
 
   /** test hook (Playwright): where the review is at */
-  status(): { charting: boolean; seeking: boolean; step: number; total: number; ended: boolean; playing: boolean; beats: TimedBeat[]; x: number; y: number } {
+  status(): { charting: boolean; seeking: boolean; step: number; total: number; ended: boolean; playing: boolean; beats: TimedBeat[]; x: number; y: number; cmd: number } {
     const p = this.gs?.player;
     return {
       charting: this.charting, seeking: this.seekTarget >= 0, step: this.step, total: this.totalSteps, ended: this.ended,
-      playing: this.playing, beats: this.beats, x: p?.x ?? 0, y: p?.y ?? 0,
+      playing: this.playing, beats: this.beats, x: p?.x ?? 0, y: p?.y ?? 0, cmd: this.pilot?.index ?? -1,
     };
   }
 

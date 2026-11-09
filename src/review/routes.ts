@@ -21,6 +21,22 @@ const enemyNear = (gs: GameScene, id: string, col: number, range: number) =>
  * instructions the autopilot hops walls and gaps by itself, so a route only spells out the
  * moments that matter: blocks to bonk, geoducks to grab, things to wait for.
  */
+/** Wait on the first arena ledge for the goose to land dizzy, then drop on it. */
+function gooseRound(note: string): RouteCmd[] {
+  const goose = (gs: GameScene): number => (gs.reviewBoss()?.x ?? gs.player.x) / T - 0.5;
+  // a short run-up: 2½ tiles short of wherever it landed (never into the left wall)
+  const runUp = (gs: GameScene): number => Math.max(217, goose(gs) - 2.5);
+  const alive = (gs: GameScene): boolean => gs.reviewBoss() !== undefined;
+  const round: RouteCmd[] = [
+    { to: 218, note },
+    { until: (gs) => { const g = gs.reviewBoss(); return !g || g.mode === 'stun'; } },
+    { to: runUp, tol: 20, sprint: true, noJump: true, note: 'Dizzy! Stomp it' },
+    { jump: 300, to: goose, sprint: true, done: (gs) => gs.reviewBoss()?.mode !== 'stun' },
+    { until: (gs) => { const g = gs.reviewBoss(); return !g || g.mode !== 'stun'; }, max: 2500 },
+  ];
+  return round.map((c) => ({ ...c, when: alive }));
+}
+
 export const ROUTES: Record<string, RouteCmd[]> = {
   '1-1': [
     { note: 'Welcome to Ballard: run right' },
@@ -73,6 +89,31 @@ export const ROUTES: Record<string, RouteCmd[]> = {
     { jump: 300, to: 232 },
     { jump: 300, to: 237 },
     { to: 284, note: 'All aboard the lock boat' },
+  ],
+  '1-3': [
+    { note: 'Golden Gardens at dusk: swooping gulls dive at big Jimothy' },
+    { to: 58, note: 'Jump the runaway cart and the bonfire' },
+    { to: 63, note: 'The lattes say jump the dip; Geoduck #1 says drop in' },
+    { to: 89, note: 'The driftwood see-saw by the bathhouse' },
+    { jump: 300, to: 94.6, keep: true, done: (gs) => gs.player.body.velocity.y < -950, note: 'Land on the see-saw\u2019s right end holding jump: big launch' },
+    { to: 101, air: true, holdJump: true, sprint: true, note: 'Steer onto the bathhouse roof: Geoduck #2' },
+    { to: 101 },
+    { to: 118, note: 'Hop the bonfires; checkpoint between them' },
+    { to: 145, note: 'Jump the tidal inlet' },
+    { to: 212, note: 'Driftwood ledges, one more bonfire… BEWARE OF GOOSE' },
+    { to: 221, note: 'Into the arena: the walls drop behind you' },
+    ...gooseRound('Keep clear. It honks, charges, hits the wall, then hops at you'),
+    ...gooseRound('Three stomps. After the second it charges there and back'),
+    ...gooseRound('Again: wait for the hop'),
+    ...gooseRound('Again: wait for the hop'),
+    ...gooseRound('Again: wait for the hop'),
+    ...gooseRound('Again: wait for the hop'),
+    { to: 245, note: 'Not a scratch: Geoduck #3 appears over the middle ledge' },
+    { to: 239.5, sprint: true, noJump: true, tol: 20 },
+    { jump: 300, to: 234.6, sprint: true },
+    { to: 233.9, tol: 6, noJump: true },
+    { jump: 300, dir: 0 },
+    { to: 258, note: 'Paddle off in the kayak' },
   ],
   '1-1-bonus': [
     { note: 'Storm Drain: lattes along the pipes' },

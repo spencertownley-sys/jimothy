@@ -47,7 +47,7 @@ for (const id of ids) {
     await page.evaluate((n) => { const r = window.__jimothy.game.scene.getScene('Review'); r.playing = false; r.seek(n); }, n);
     await page.waitForFunction((n) => { const s = window.__jimothy.review(); return s && !s.seeking && (s.step === n || s.ended); }, n, { timeout: 60000 });
     await page.waitForTimeout(150);
-    console.log(`  @${sec}s`, await page.evaluate(() => window.__jimothy.game.scene.getScene('Game').player.debugInfo()));
+    console.log(`  @${sec}s cmd#${(await page.evaluate(() => window.__jimothy.review())).cmd}`, await page.evaluate(() => window.__jimothy.game.scene.getScene('Game').player.debugInfo()));
     await page.screenshot({ path: `${shots ?? '.'}/look-${id}-${sec}.png` });
   }
   await page.close();

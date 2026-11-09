@@ -1230,7 +1230,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
       const hpBefore = enemy.hp;
       if (enemy.onStomp(this.enemyContext(0))) {
         this.player.bounce(this.input_.get('jump'));
-        this.beat(enemy.isBoss ? 'boss' : 'stomp', `Stomp: ${ENEMY_NAMES[enemy.def.id] ?? enemy.def.id}`);
+        if (!enemy.isBoss) this.beat('stomp', `Stomp: ${ENEMY_NAMES[enemy.def.id] ?? enemy.def.id}`);
+        else if (enemy.hp !== hpBefore && enemy.alive) this.beat('boss', `Goose hit! ${enemy.hp} to go`);
       }
       if (enemy.isBoss && enemy.hp !== hpBefore && enemy.alive) bus.emit(EV.HUD_BOSS, { name: 'CANADA GOOSE', hp: enemy.hp, max: enemy.def.hp });
       return;
@@ -1558,6 +1559,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     let best: Geyser | undefined;
     for (const g of this.geysers) if (!best || Math.abs(g.x - x) < Math.abs(best.x - x)) best = g;
     return best;
+  }
+
+  /** Review routes: the boss (1-3's goose), if the level has one and it's still about. */
+  reviewBoss(): { x: number; y: number; mode: string; hp: number } | undefined {
+    const g = this.arena?.boss;
+    return g && g.alive ? { x: g.x, y: g.y, mode: g.mode, hp: g.hp } : undefined;
   }
 
   /** Review routes: is it raining (3-3 umbrellas open)? */
