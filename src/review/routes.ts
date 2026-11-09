@@ -34,6 +34,17 @@ function rideToss(handCol: number, standCol: number, offCol: number, note: strin
   ];
 }
 
+/** Stand in the fountain jet at `col` until it launches him, then steer (holding jump) to `landCol`. */
+function rideJet(col: number, landCol: number, note: string, hopOn = false): RouteCmd[] {
+  return [
+    ...(hopOn ? [{ jump: 300, to: col, sprint: true, note: note || undefined } as RouteCmd] : []),
+    { to: col, tol: 10, noJump: true, note: hopOn ? undefined : note || undefined },
+    { until: (gs) => gs.player.body.velocity.y < -300, max: 4000 },
+    { to: landCol, air: true, holdJump: true },
+    { to: landCol },
+  ];
+}
+
 /** A live enemy of this kind within `range` px of the column. */
 const enemyNear = (gs: GameScene, id: string, col: number, range: number) =>
   gs.enemySnapshot().find((e) => e.id === id && e.alive && Math.abs(e.x - (col * T + T / 2)) < range);
@@ -227,6 +238,37 @@ export const ROUTES: Record<string, RouteCmd[]> = {
     { jump: 300, to: 226, sprint: true },
     { to: 331, note: 'Piers and gaps to the water taxi' },
     { jump: 300, to: 337, sprint: true, note: 'Leap onto the departing water taxi' },
+  ],
+  '3-1': [
+    { note: 'Fountain Plaza at night: jets fire every 2 s and launch you up' },
+    { to: 35, note: 'Teriyaki in the ? block' },
+    { jump: 300 },
+    { wait: 650 },
+    { to: 39 },
+    ...rideJet(41, 47, 'The jet at the lip of the pit is the way across'),
+    { to: 92, note: 'The Freeze pair, crows, a cone…' },
+    ...rideJet(94, 99, 'The triple fountain: hold jump and ride it up to the lamp wire'),
+    { to: 100, note: 'Geoduck #1 on the wire' },
+    { to: 111, note: 'Rain Jacket in the ? block' },
+    { jump: 300 },
+    { wait: 650 },
+    { to: 114, noJump: true },
+    { to: 116.4, sprint: true, noJump: true, tol: 20 },
+    ...rideJet(121.5, 126.5, 'Jet to jet across the gaps', true),
+    ...rideJet(126.5, 132, ''),
+    { to: 170, note: 'It is 12:04 AM. Checkpoint, then the glass garden' },
+    { to: 186, crouch: true, note: 'Crouch (↓) through the glowing tube: Geoduck #2 inside' },
+    { to: 197, noJump: true, note: 'Stepping-stone islands, each with a jet' },
+    { to: 199.4, sprint: true, noJump: true, tol: 20 },
+    ...rideJet(204.5, 209.5, '', true),
+    ...rideJet(209.5, 214.5, ''),
+    ...rideJet(214.5, 220, ''),
+    { to: 231, note: 'A hidden block at the Needle\u2019s leg' },
+    { jump: 300 },
+    { to: 224, noJump: true, note: 'Geoduck #3 pops out on top: a running jump onto it' },
+    { to: 226.6, sprint: true, noJump: true, tol: 20 },
+    { jump: 300, to: 231, sprint: true },
+    { to: 286, note: 'The monorail station: doors open' },
   ],
   '1-1-bonus': [
     { note: 'Storm Drain: lattes along the pipes' },
