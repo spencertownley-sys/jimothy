@@ -50,6 +50,9 @@ export class BootScene extends Phaser.Scene {
     g.fillCircle(4, 4, 4);
     g.generateTexture('fx:spark', 8, 8);
     g.destroy();
-    this.scene.start('Title');
+    // ?review=1-2 opens straight into that level's route review (handy for level design)
+    const review = new URLSearchParams(window.location.search).get('review');
+    if (review && LEVELS.some((l) => l.id === review && l.file)) this.scene.start('Review', { levelId: review });
+    else this.scene.start('Title');
   }
 }

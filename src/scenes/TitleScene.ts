@@ -70,14 +70,15 @@ export class TitleScene extends Phaser.Scene {
   private showMenu(): void {
     this.press.destroy();
     const W = CONFIG.WIDTH;
-    this.add.rectangle(W / 2, 470, 460, 300, 0x233b31, 0.92).setStrokeStyle(4, 0x8a6a40);
-    this.menu = new Menu(this, W / 2 - 170, 360, [
+    this.add.rectangle(W / 2, 486, 460, 340, 0x233b31, 0.92).setStrokeStyle(4, 0x8a6a40);
+    this.menu = new Menu(this, W / 2 - 170, 352, [
       { label: 'New Game', onSelect: () => this.newGame() },
       { label: 'Continue', disabled: !Save.hasProgress(), onSelect: () => this.scene.start('WorldMap') },
       { label: 'Options', onSelect: () => this.scene.start('Options', { back: 'Title' }) },
+      { label: 'Route Review', onSelect: () => this.scene.start('ReviewMenu') },
       { label: 'Gallery', onSelect: () => this.scene.start('Gallery') },
       { label: 'Credits', onSelect: () => this.scene.start('Credits') },
-    ], { gap: 52, fontSize: 32 });
+    ], { gap: 46, fontSize: 30 });
   }
 
   private newGame(): void {

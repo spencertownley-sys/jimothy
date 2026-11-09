@@ -58,7 +58,7 @@ export class Menu {
     this.container.setDepth(d);
   }
 
-  private setIndex(i: number): void {
+  setIndex(i: number): void {
     if (i === this.index && this.underline.width > 0) return;
     this.index = i;
     const t = this.texts[i];

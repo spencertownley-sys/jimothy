@@ -22,6 +22,8 @@ export interface PlayerHost {
   onFlannel(active: boolean): void;
   onExtraLife(): void;
   onThrow(x: number, y: number, dir: 1 | -1): void;
+  /** god mode (route review): called instead of dying */
+  rescue?(): void;
 }
 
 const approach = (v: number, target: number, step: number): number =>
@@ -39,6 +41,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   onWet = false;
   /** pressing into the sticky gum wall: slide down it slowly */
   wallSlide = false;
+  /** route review: nothing hurts, shoves or kills him (a would-be death calls host.rescue) */
+  god = false;
   /** hits taken this life (the goose fight's no-damage geoduck reads it) */
   hitsTaken = 0;
   /** sideways speed borrowed from the platform he's riding this step (the scene adds and removes it) */
@@ -87,7 +91,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   get invulnerable(): boolean {
-    return this.iframesMs > 0 || this.flannelMs > 0;
+    return this.iframesMs > 0 || this.flannelMs > 0 || this.god;
   }
 
   /** Called once per physics step from the scene. Never reads delta for logic; dtMs is the fixed step. */
@@ -328,6 +332,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Returns true if the hit landed (false while invulnerable / frozen / dead). */
   hurt(cause: HurtCause = 'other'): boolean {
+    if (this.god) return false;
     if (this.invulnerable || this.fsm === 'Dead' || this.fsm === 'Victory' || this.freezeMs > 0) return false;
     const next = powerAfterHit(this.power);
     this.hitsTaken += 1;
@@ -349,7 +354,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** Freeze-pulse style shove: no damage, short i-frames so pulses can't chain-stun. */
   knockback(dirX: 1 | -1, speed: number, cause: HurtCause = 'other'): void {
-    if (this.fsm === 'Dead' || this.fsm === 'Victory') return;
+    if (this.fsm === 'Dead' || this.fsm === 'Victory' || this.god) return;
     this.body.setVelocity(dirX * speed, -260);
     this.carryVx = 0; // the shove replaces whatever he was riding
     Haptics.pulse(cause === 'bird' ? 'peck' : 'stomp');
@@ -358,6 +363,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   die(): void {
     if (this.fsm === 'Dead') return;
+    if (this.god) {
+      this.host.rescue?.();
+      return;
+    }
     this.fsm = 'Dead';
     this.carryVx = 0;
     this.crouching = false;
@@ -426,7 +435,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** The seagull flock steals his power-up: back to small, no damage, short i-frames. */
   stripPower(cause: HurtCause = 'other'): boolean {
-    if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable) return false;
+    if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable || this.god) return false;
     this.setPower('small', 'Shrink');
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     AudioManager.sfx('hurt');

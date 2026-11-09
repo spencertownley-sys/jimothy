@@ -116,8 +116,11 @@ let lastAt = -Infinity;
 const busy = { untilMs: 0, priority: -1 };
 
 export const Haptics = {
+  /** the route review is something you watch: nothing buzzes while it plays */
+  muted: false,
+
   enabled(): boolean {
-    return Save.get().options.haptics;
+    return !this.muted && Save.get().options.haptics;
   },
 
   pulse(kind: HapticKind): void {

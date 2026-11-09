@@ -4,6 +4,7 @@ import { AudioManager } from '../core/audio/AudioManager';
 import { bus, EV, type HudState } from '../core/events';
 import { Haptics } from '../core/haptics';
 import { getInput } from '../core/input';
+import { InputState, type InputSource } from '../core/input/InputState';
 import { newRun, RUN_KEY, type RunState } from '../core/run';
 import { Save } from '../core/save/Save';
 import { getProp, objectRect, objectType, type TiledObjectLike } from '../core/tiled';
@@ -34,7 +35,18 @@ import { COLORS, uiText } from '../ui/text';
 export interface GameSceneData {
   levelId: string;
   spawn?: string;
+  /** route review: the ReviewScene drives the steps and an autopilot the inputs; can't die */
+  review?: boolean;
 }
+
+/** A moment worth stopping on in the route review (see ReviewScene). */
+export interface ReviewBeat {
+  kind: 'checkpoint' | 'geoduck' | 'powerup' | 'block' | 'stomp' | 'door' | 'boss' | 'clear' | 'rescue' | 'note';
+  text: string;
+}
+
+/** Scene events the route review listens for. */
+export const REVIEW_EVENTS = { BEAT: 'review-beat', END: 'review-end' } as const;
 
 interface Zone {
   kind: 'drain' | 'exit' | 'door' | 'pier';
@@ -83,6 +95,19 @@ interface Arena {
   walls: Phaser.GameObjects.GameObject[];
   boss?: CanadaGoose;
 }
+
+const POWERUP_NAMES: Record<PowerUpKind, string> = {
+  teriyaki: 'Teriyaki: big Jimothy',
+  jacket: 'Rain Jacket: throw rain drops',
+  flannel: 'Flannel: invincible',
+  star: 'Loyalty Star: 1-up',
+  doubleshot: 'Double Shot: sprint',
+};
+
+const ENEMY_NAMES: Record<string, string> = {
+  seagull: 'seagull', crow: 'crow', freeze: 'the Freeze', scooter: 'rogue scooter', cone: 'hopping cone',
+  slug: 'banana slug', cart: 'runaway cart', goose: 'Canada Goose',
+};
 
 const easeOut = (t: number): number => 1 - (1 - t) * (1 - t);
 const easeIn = (t: number): number => t * t;
@@ -165,7 +190,19 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private rain?: RainCycle;
   /** auto-scroller camera (3-2): scroll x, speed, where it stops */
   private scroll?: { x: number; speed: number; max: number };
-  private input_ = getInput().state;
+  private input_: InputState = getInput().state;
+  /** route review: no lives, no saves, the camera steps with the sim */
+  review = false;
+  /** what the review autopilot holds this step (read by input_ in review mode) */
+  reviewPad: InputSource & { snap: Record<string, boolean> } = {
+    snap: {},
+    read() {
+      const s = this.snap;
+      return { left: !!s.left, right: !!s.right, down: !!s.down, jump: !!s.jump, a: !!s.a, b: !!s.b, start: false };
+    },
+  };
+  /** last spot he stood safely (review mode puts him back here instead of losing a life) */
+  private lastSafe = { x: 0, y: 0 };
   private timeMs = 0;
   private ending = false;
   private debugText?: Phaser.GameObjects.Text;
@@ -191,6 +228,13 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     const def = levelById(data.levelId);
     if (!def || !def.file) throw new Error(`unknown or unbuilt level "${data.levelId}"`);
     this.def = def;
+    this.review = data.review === true;
+    this.input_ = this.review ? new InputState([this.reviewPad]) : getInput().state;
+    // Phaser's tween clock reads Date.now(), not the step's delta. The review steps the scene by
+    // hand (hundreds of steps a frame when seeking), so there each tween tick is exactly one step.
+    const tweens = this.tweens as unknown as { getDelta?: (tick: boolean) => number };
+    if (this.review) tweens.getDelta = () => 1000 / CONFIG.FIXED_FPS;
+    else delete tweens.getDelta;
     this.ending = false;
     this.timeMs = 0;
     this.zones = [];
@@ -211,9 +255,14 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.rain = undefined;
     this.scroll = undefined;
     this.input_.reset();
-    this.run = (this.registry.get(RUN_KEY) as RunState | undefined) ?? newRun(def.id);
-    this.run.levelId = def.id;
-    this.registry.set(RUN_KEY, this.run);
+    if (this.review) {
+      // a fresh run every time, kept off the registry so the real game's run is untouched
+      this.run = newRun(def.id);
+    } else {
+      this.run = (this.registry.get(RUN_KEY) as RunState | undefined) ?? newRun(def.id);
+      this.run.levelId = def.id;
+      this.registry.set(RUN_KEY, this.run);
+    }
 
     this.level = loadLevel(this, def);
     this.physics.world.setBounds(0, 0, this.level.widthPx, this.level.heightPx + 600);
@@ -246,6 +295,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
       spawnName = 'checkpoint';
     }
     this.player = new Player(this, spawn.x, spawn.y, this, this.run.power);
+    this.player.god = this.review;
+    this.lastSafe = { x: spawn.x, y: spawn.y };
     this.spawnObjects();
     this.time.addEvent({ delay: 420, loop: true, callback: () => { for (const l of this.lattes.getChildren() as Latte[]) l.spin(); } });
 
@@ -288,6 +339,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
       cam.stopFollow();
       cam.setScroll(0, 0);
       this.scroll = { x: 0, speed: def.autoScroll, max: Math.max(0, this.level.widthPx - CONFIG.WIDTH) };
+    } else if (this.review) {
+      // Review steps the sim by hand, many steps per frame when seeking. Phaser's follow lerps
+      // once per *rendered* frame, so the camera (and the enemies that wake near it) would come
+      // out different on every replay; the review camera moves in the fixed step instead.
+      cam.stopFollow();
+      this.reviewCamera(true);
     }
 
     if (Save.get().options.drizzle && this.level.parallaxSet !== 'drain') {
@@ -455,7 +512,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private fixedStep(dtMs: number): void {
     this.input_.update();
     if (this.ending) return;
-    if (this.input_.justPressed('start') && this.player.fsm !== 'Dead') {
+    if (!this.review && this.input_.justPressed('start') && this.player.fsm !== 'Dead') {
       this.pauseGame();
       return;
     }
@@ -512,6 +569,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
 
     if (this.player.fsm !== 'Dead') this.checkZones();
     this.player.lastVy = this.player.body.velocity.y;
+    if (this.player.lastGrounded && this.player.body.enable && !this.waterAt(this.player.x)) this.lastSafe = { x: this.player.x, y: this.player.y };
+    if (this.review && !this.scroll) this.reviewCamera(false);
 
     // Phaser only resets blocked/touching in the first sub-step of a frame. Without this, catch-up
     // sub-steps on a slow frame skip tile separation and bodies sink through floors.
@@ -556,7 +615,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private enemyContext(dtMs: number): EnemyContext {
     return {
       player: this.player,
-      cameraCenterX: this.cameras.main.midPoint.x,
+      // scroll + half a screen, not midPoint: midPoint only updates when a frame renders
+      cameraCenterX: this.cameras.main.scrollX + CONFIG.WIDTH / 2,
       worldHeight: this.level.heightPx,
       dtMs,
       solidAt: (x, y) => this.solidAt(x, y),
@@ -840,11 +900,13 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     const spot = this.level.spawns.get(target);
     if (!spot || this.ending) return;
     this.ending = true;
+    this.beat('door', 'Through the door');
     AudioManager.sfx('drain');
     this.player.body.setVelocity(0, 0);
     this.cameras.main.fadeOut(300, 0, 0, 0);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.teleport(spot.x, spot.y);
+      if (this.review) this.reviewCamera(true);
       this.cameras.main.fadeIn(300, 0, 0, 0);
       this.ending = false;
     });
@@ -922,6 +984,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
 
   private engageArena(a: Arena): void {
     a.engaged = true;
+    this.beat('boss', 'Boss: the Canada Goose');
     a.hitsAtStart = this.player.hitsTaken;
     const T = CONFIG.TILE;
     for (const wx of [a.rect.left, a.rect.right - T]) {
@@ -953,6 +1016,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private bossDefeated(boss: Enemy): void {
     const a = this.arena;
     bus.emit(EV.HUD_BOSS, null);
+    this.beat('boss', 'Goose defeated');
     this.toast('HONK.');
     AudioManager.music(this.level.music);
     if (!a) return;
@@ -1108,8 +1172,14 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.cameras.main.setScroll(sc.x, 0);
     const pb = this.player.body;
     if (this.player.x < sc.x - A.KILL_MARGIN) {
-      this.player.die();
-      return;
+      if (this.review) {
+        // can't be left behind in a review: the left edge just pushes
+        pb.x = sc.x - A.KILL_MARGIN - pb.width / 2 + 1;
+        if (pb.velocity.x < 0) pb.velocity.x = 0;
+      } else {
+        this.player.die();
+        return;
+      }
     }
     const maxX = sc.x + CONFIG.WIDTH - A.RIGHT_MARGIN;
     if (pb.right > maxX) {
@@ -1144,8 +1214,10 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private onBlockTouch(block: QuestionBlock | Brick): void {
     const pb = this.player.body;
     if (!(pb.touching.up && block.body.touching.down)) return;
-    if (block instanceof QuestionBlock) block.bump(this);
-    else block.bump(this.player, this);
+    if (block instanceof QuestionBlock) {
+      if (!block.used) this.beat('block', '? block');
+      block.bump(this);
+    } else block.bump(this.player, this);
   }
 
   private onPlayerEnemy(enemy: Enemy): void {
@@ -1156,7 +1228,10 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     const fromAbove = prevBottom <= eb.top + CONFIG.STOMP_TOLERANCE && pb.velocity.y >= 0;
     if (enemy.def.stompable && fromAbove) {
       const hpBefore = enemy.hp;
-      if (enemy.onStomp(this.enemyContext(0))) this.player.bounce(this.input_.get('jump'));
+      if (enemy.onStomp(this.enemyContext(0))) {
+        this.player.bounce(this.input_.get('jump'));
+        this.beat(enemy.isBoss ? 'boss' : 'stomp', `Stomp: ${ENEMY_NAMES[enemy.def.id] ?? enemy.def.id}`);
+      }
       if (enemy.isBoss && enemy.hp !== hpBefore && enemy.alive) bus.emit(EV.HUD_BOSS, { name: 'CANADA GOOSE', hp: enemy.hp, max: enemy.def.hp });
       return;
     }
@@ -1192,7 +1267,8 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     const index = duck.index;
     duck.destroy();
     this.run.geoducksFound[index] = true;
-    Save.recordGeoduck(this.def.parent ?? this.def.id, index);
+    if (!this.review) Save.recordGeoduck(this.def.parent ?? this.def.id, index);
+    this.beat('geoduck', `Geoduck #${index + 1}`);
     AudioManager.sfx('geoduck');
     Haptics.pulse('geoduck');
     this.burst(this.player.x, this.player.y - 40, 0xff6f61);
@@ -1204,6 +1280,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     const kind = p.kind;
     p.destroy();
     this.player.applyPowerUp(kind);
+    this.beat('powerup', POWERUP_NAMES[kind]);
     bus.emit(EV.HUD_POWER, kind);
     this.pushHud();
   }
@@ -1212,6 +1289,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     if (c.activated) return;
     c.activate();
     this.run.checkpoint = { levelId: this.def.id, x: c.x, y: c.y };
+    this.beat('checkpoint', 'Checkpoint');
     this.toast('☕');
   }
 
@@ -1286,7 +1364,17 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   }
 
   private enterDrain(targetLevel: string, targetSpawn: string): void {
+    // the review stays on one map: a main level skips its drains, and a bonus room's review
+    // ends when he climbs back out
     if (this.ending) return;
+    if (this.review) {
+      if (this.def.parent) {
+        this.ending = true;
+        this.beat('clear', `Back up the drain to ${this.def.parent}`);
+        this.time.delayedCall(600, () => this.events.emit(REVIEW_EVENTS.END));
+      }
+      return;
+    }
     this.ending = true;
     AudioManager.sfx('drain');
     this.run.power = this.player.power;
@@ -1301,6 +1389,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   private levelClear(vehicle: string): void {
     if (this.ending) return;
     this.ending = true;
+    this.beat('clear', 'Level clear!');
     this.run.power = this.player.power;
     const totalMs = this.run.elapsedMs + this.timeMs;
     this.player.victory();
@@ -1358,6 +1447,11 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
   }
 
   private finishLevel(totalMs: number): void {
+    if (this.review) {
+      // nothing is saved and nothing moves on: the review holds on the last frame
+      this.events.emit(REVIEW_EVENTS.END);
+      return;
+    }
     const next = nextLevelId(this.def.id);
     const lattesThisLevel = this.run.lattesThisLevel;
     Save.recordClear(this.def.id, totalMs, this.run.geoducksFound, lattesThisLevel, next);
@@ -1377,6 +1471,111 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     AudioManager.setPaused(true);
     this.scene.launch('Pause', { levelId: this.def.parent ?? this.def.id });
     this.scene.pause();
+  }
+
+  // --- route review --------------------------------------------------------------------------
+
+  private beat(kind: ReviewBeat['kind'], text: string): void {
+    if (this.review) this.events.emit(REVIEW_EVENTS.BEAT, { kind, text } satisfies ReviewBeat);
+  }
+
+  /** Review autopilot notes ("wait for the gate…") land on the timeline like any other beat. */
+  reviewNote(text: string): void {
+    this.beat('note', text);
+  }
+
+  /** PlayerHost: in a review he can't die; he's put back where he last stood safely. */
+  rescue(): void {
+    const s = this.lastSafe;
+    this.beat('rescue', 'Oops: that would cost a life');
+    this.teleport(s.x, s.y - 2);
+    this.player.iframesMs = CONFIG.HURT_IFRAMES_MS;
+  }
+
+  /**
+   * The review camera: the same deadzone-and-lerp feel as the follow camera, stepped with the
+   * sim so replays match exactly. `snap` centres it at once (level start, doors).
+   */
+  private reviewCamera(snap: boolean): void {
+    const cam = this.cameras.main;
+    const C = CONFIG.CAMERA;
+    const p = this.player;
+    const tx = p.x - CONFIG.WIDTH / 2 + C.LOOKAHEAD * p.facing;
+    const ty = p.y - 40 - CONFIG.HEIGHT / 2;
+    const clampX = (x: number): number => Phaser.Math.Clamp(x, 0, Math.max(0, this.level.widthPx - CONFIG.WIDTH));
+    const clampY = (y: number): number => Phaser.Math.Clamp(y, 0, Math.max(0, this.level.heightPx - CONFIG.HEIGHT));
+    if (snap) {
+      cam.setScroll(clampX(tx), clampY(ty));
+      return;
+    }
+    // only chase once he's outside the deadzone, like the play camera
+    const dx = tx - cam.scrollX;
+    const dy = ty - cam.scrollY;
+    const ex = Math.abs(dx) > C.DEADZONE_W / 2 ? dx - Math.sign(dx) * (C.DEADZONE_W / 2) : 0;
+    const ey = Math.abs(dy) > C.DEADZONE_H / 2 ? dy - Math.sign(dy) * (C.DEADZONE_H / 2) : 0;
+    cam.setScroll(clampX(cam.scrollX + ex * C.LERP), clampY(cam.scrollY + ey * C.LERP));
+  }
+
+  /**
+   * Review autopilot's view of the world: does anything he can stand on occupy this point?
+   * Tiles (solid and one-way), blocks, props, bounce pads, umbrellas and moving platforms.
+   * With `wall`, only things that block from the side or below count (no one-way fences).
+   */
+  reviewSolidAt(x: number, y: number, wall = false): boolean {
+    const g = this.level.ground.getTileAtWorldXY(x, y);
+    if (g && g.collides) return true;
+    if (!wall) {
+      const o = this.level.oneway?.getTileAtWorldXY(x, y);
+      if (o && o.index > 0) return true;
+    }
+    const bodies = this.physics.overlapRect(x - 1, y - 1, 2, 2, true, true) as (Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody)[];
+    const groups = [this.blocks, this.statics, this.walls, this.padGroup, this.umbrellaGroup, this.moverGroup];
+    return bodies.some((b) => b.enable && b.gameObject && b !== this.player.body && (!wall || b.checkCollision.left || b.checkCollision.down) && groups.some((gr) => gr.contains(b.gameObject)));
+  }
+
+  /**
+   * Review routes: the moving platform (gate, salmon, gondola, train) nearest this column, with
+   * where it is in its cycle. `leg` is the Mover leg index (gates: 0 up, 1 lowering, 2 down,
+   * 3 rising; salmon: 0 under, 1 leaping, 2 holding at the top, 3 falling).
+   */
+  reviewMover(col: number): { x: number; top: number; leg: number; progress: number; visible: boolean } | undefined {
+    const x = col * CONFIG.TILE + CONFIG.TILE / 2;
+    let best: Ride | undefined;
+    for (const m of this.movers) if (!best || Math.abs(m.x - x) < Math.abs(best.x - x)) best = m;
+    if (!best) return undefined;
+    return {
+      x: best.body.center.x,
+      top: best.body.top,
+      leg: best instanceof Mover ? best.legIndex : 0,
+      progress: best instanceof Mover ? best.progress : 0,
+      visible: best.visible,
+    };
+  }
+
+  /** Review routes: the geysers' cycle (ms into its 2 s loop) for the one nearest this column. */
+  reviewGeyser(col: number): Geyser | undefined {
+    const x = col * CONFIG.TILE + CONFIG.TILE / 2;
+    let best: Geyser | undefined;
+    for (const g of this.geysers) if (!best || Math.abs(g.x - x) < Math.abs(best.x - x)) best = g;
+    return best;
+  }
+
+  /** Review routes: is it raining (3-3 umbrellas open)? */
+  get reviewWet(): boolean {
+    return this.rain?.wet ?? false;
+  }
+
+  /** Review routes: the auto-scroll camera's x (3-2). */
+  get reviewScrollX(): number {
+    return this.scroll?.x ?? this.cameras.main.scrollX;
+  }
+
+  get levelWidthPx(): number {
+    return this.level.widthPx;
+  }
+
+  get levelHeightPx(): number {
+    return this.level.heightPx;
   }
 
   // --- vfx / hud ---------------------------------------------------------------------------

@@ -10,6 +10,8 @@ import { IntroScene } from './scenes/IntroScene';
 import { LevelClearScene } from './scenes/LevelClearScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { PauseScene } from './scenes/PauseScene';
+import { ReviewMenuScene } from './scenes/ReviewMenuScene';
+import { ReviewScene } from './scenes/ReviewScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
 import { mountTouchPanels, wantsTouchControls } from './ui/TouchControls';
@@ -49,7 +51,7 @@ const game = new Phaser.Game({
   input: { keyboard: true, gamepad: false, touch: true, activePointers: 4 },
   scene: [
     BootScene, TitleScene, IntroScene, WorldMapScene, GameScene, HUDScene, PauseScene,
-    OptionsScene, CreditsScene, GalleryScene, LevelClearScene, GameOverScene,
+    OptionsScene, CreditsScene, GalleryScene, LevelClearScene, GameOverScene, ReviewMenuScene, ReviewScene,
   ],
 });
 
@@ -62,8 +64,9 @@ for (const ev of ['keydown', 'pointerdown', 'touchstart'] as const) {
 }
 window.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    const gs = game.scene.getScene('Game');
-    if (gs && game.scene.isActive('Game') && !game.scene.isActive('Pause')) {
+    const gs = game.scene.getScene('Game') as GameScene | null;
+    // the route review steps the level itself and simply stops while the tab is hidden
+    if (gs && game.scene.isActive('Game') && !game.scene.isActive('Pause') && !gs.review) {
       AudioManager.setPaused(true);
       game.scene.pause('Game');
       game.scene.start('Pause', { levelId: (gs.registry.get('run') as { levelId?: string } | undefined)?.levelId ?? '1-1' });
@@ -74,7 +77,7 @@ window.addEventListener('visibilitychange', () => {
 // test hooks (Playwright reads these)
 declare global {
   interface Window {
-    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[]; start: (scene: string, data?: object) => void; geoducks: () => boolean[] };
+    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[]; start: (scene: string, data?: object) => void; geoducks: () => boolean[]; review: () => ReturnType<ReviewScene['status']> | undefined };
   }
 }
 window.__jimothy = {
@@ -115,6 +118,7 @@ window.__jimothy = {
     for (const s of game.scene.getScenes(true)) game.scene.stop(s.scene.key);
     game.scene.start(scene, data);
   },
+  review: () => (game.scene.isActive('Review') ? (game.scene.getScene('Review') as ReviewScene).status() : undefined),
   geoducks: () => {
     const run = game.registry.get('run') as { geoducksFound?: boolean[] } | undefined;
     return run?.geoducksFound ?? [];
