@@ -17,7 +17,7 @@ const seek = async (n) => {
 const st = await rs();
 const trail = await page.evaluate(() => window.__jimothy.game.scene.getScene('Review').trail);
 console.log('total', st.total);
-for (const n of [600, 1800, 1200, Math.floor(st.total * 0.9), 300]) {
+for (const n of [600, 1800, 1200, Math.floor(st.total * 0.3) * 3, 300]) {
   const a = await seek(n);
   const t = trail[Math.floor(n / 3) - 1];
   console.log(n, 'seek ->', a.x.toFixed(2), a.y.toFixed(2), ' chart ->', t?.x.toFixed(2), t?.y.toFixed(2));

@@ -7,6 +7,7 @@ import { levelById } from '../levels/LevelDef';
 import { Autopilot } from '../review/Autopilot';
 import { routeFor } from '../review/routes';
 import { COLORS, uiText } from '../ui/text';
+import { wantsTouchControls } from '../ui/TouchControls';
 import { REVIEW_EVENTS, type GameScene, type ReviewBeat } from './GameScene';
 
 export interface ReviewSceneData {
@@ -354,7 +355,10 @@ export class ReviewScene extends Phaser.Scene {
     const speed = btn(W / 2 + 260, '1×', () => this.changeSpeed(this.speedIndex >= SPEEDS.length - 1 ? -(SPEEDS.length - 1) : 1), 80);
     btn(W - 70, '✕ exit', () => this.exit(), 100);
     const time = uiText(this, 32, y, '', { fontSize: 18, color: COLORS.mist, display: false }).setOrigin(0, 0.5);
-    uiText(this, W - 30, 80, '← → beats  ·  ↑ ↓ speed  ·  Space play/pause  ·  A / S  ∓3 s  ·  Esc exit', { fontSize: 15, color: COLORS.mist, display: false }).setOrigin(1, 0.5);
+    const hint = wantsTouchControls()
+      ? 'd-pad ◀ ▶ beats  ·  ↑ ↓ speed  ·  ❚❚ play/pause  ·  A / B  ∓3 s'
+      : '← → beats  ·  ↑ ↓ speed  ·  Space play/pause  ·  A / S  ∓3 s  ·  Esc exit';
+    uiText(this, W - 30, 80, hint, { fontSize: 15, color: COLORS.mist, display: false }).setOrigin(1, 0.5);
     this.ui = { title, caption, next, status, time, play, speed, bar, fill, head, ticks, veil };
   }
 
