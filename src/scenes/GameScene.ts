@@ -1570,6 +1570,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     return g && g.alive ? { x: g.x, y: g.y, mode: g.mode, hp: g.hp } : undefined;
   }
 
+  /** Review routes: where a geoduck still waiting to be found is (some ride platforms). */
+  reviewGeoduck(index: number): { x: number; y: number } | undefined {
+    const d = (this.geoducks.getChildren() as Geoduck[]).find((g) => g.index === index && g.active);
+    return d ? { x: d.x, y: d.y } : undefined;
+  }
+
   /** Review routes: is it raining (3-3 umbrellas open)? */
   get reviewWet(): boolean {
     return this.rain?.wet ?? false;
