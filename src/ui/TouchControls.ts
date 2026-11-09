@@ -41,6 +41,10 @@ const CSS = `
 .jt-a { width: 50%; max-width: 104px; background-image: url("assets/ui/btn_a.png"); margin-top: -8%; }
 .jt-b { width: 46%; max-width: 96px; background-image: url("assets/ui/btn_b.png"); margin-top: 18%; }
 .jt-spacer { flex: 1 1 auto; }
+.jt-btn { position: relative; }
+/* iPhone haptics: a real iOS switch, invisible, under the thumb (see nativeTick) */
+.jt-tick { position: absolute; inset: 0; opacity: 0.01; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+.jt-tick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
 `;
 
 const DIRS: readonly InputKey[] = ['left', 'right', 'down', 'jump'];
@@ -81,6 +85,7 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
   const a = button('jt-btn jt-a', 'A: throw');
   row.append(b, a);
   right.append(spacer(), jump, row);
+  for (const el of [pause, dpad, jump, a, b]) nativeTick(el);
   holdButton(jump, 'jump', 'jumpButton');
   holdButton(a, 'a', 'aButton');
   holdButton(b, 'b', 'bButton');
@@ -110,6 +115,30 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
     return el;
   }
 
+  /**
+   * iPhone Safari has no Vibration API, and it ignores a switch toggled from code outside a
+   * gesture. But a real <input type=checkbox switch> toggled by a real finger always plays the
+   * system tick (iOS 18+). So every button carries one, invisible, under the thumb: lifting the
+   * finger toggles it and iOS buzzes. Touch pointers are implicitly captured to what they first
+   * touched, so the tap lands on the switch and still bubbles to the button's handlers.
+   */
+  function nativeTick(el: HTMLElement): void {
+    if (!Haptics.iosNative) return;
+    const label = document.createElement('label');
+    label.className = 'jt-tick';
+    label.setAttribute('aria-hidden', 'true');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    input.tabIndex = -1;
+    label.appendChild(input);
+    // Vibration off in Options: stop the toggle, and with it the tick
+    label.addEventListener('click', (e) => {
+      if (!Haptics.enabled()) e.preventDefault();
+    });
+    el.appendChild(label);
+  }
+
   function firstTouch(): void {
     AudioManager.unlock();
   }
@@ -124,7 +153,9 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
     el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       firstTouch();
-      el.setPointerCapture?.(e.pointerId);
+      // a touch is already captured to what it landed on (the tick switch); capturing it to the
+      // button instead would send the click there and the switch would never toggle
+      if (e.pointerType !== 'touch') el.setPointerCapture?.(e.pointerId);
       if (pointers.size === 0) Haptics.pulse('tap');
       // press every time (it's idempotent): if a lost pointerup left `pointers` stale, the button
       // must still work on the next touch
@@ -174,7 +205,7 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
       firstTouch();
       pointer = e.pointerId;
       keys = [];
-      el.setPointerCapture?.(e.pointerId);
+      if (e.pointerType !== 'touch') el.setPointerCapture?.(e.pointerId);
       apply(e);
     });
     el.addEventListener('pointermove', (e) => {
