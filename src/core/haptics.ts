@@ -71,27 +71,41 @@ function capacitorHaptics(): CapacitorHaptics | undefined {
   return cap?.Plugins?.Haptics;
 }
 
-let iosSwitch: HTMLLabelElement | null = null;
+/**
+ * iPhone Safari has no Vibration API. Toggling an iOS 18 `<input type=checkbox switch>` plays the
+ * system's switch tick instead — but only inside a real user gesture, and Safari counts a finger
+ * *lifting* as one, not a finger landing. Built fresh each time (as the ios-haptics package does).
+ */
 function iosTick(): boolean {
   if (typeof document === 'undefined') return false;
-  if (!iosSwitch) {
-    const label = document.createElement('label');
-    label.setAttribute('aria-hidden', 'true');
-    label.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.setAttribute('switch', '');
-    input.tabIndex = -1;
-    label.appendChild(input);
-    document.body.appendChild(label);
-    iosSwitch = label;
-  }
-  iosSwitch.click();
+  const label = document.createElement('label');
+  label.setAttribute('aria-hidden', 'true');
+  label.style.display = 'none';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('switch', '');
+  label.appendChild(input);
+  document.head.appendChild(label);
+  label.click();
+  label.remove();
   return true;
 }
 
 const isIOS = (): boolean =>
-  typeof navigator !== 'undefined' && /iP(hone|ad|od)/.test(navigator.userAgent) && !('vibrate' in navigator);
+  typeof navigator !== 'undefined' &&
+  (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) &&
+  typeof navigator.vibrate !== 'function';
+
+/** A button tap waiting for the finger to lift (iPhone only; see iosTick). */
+let iosTapPending = false;
+if (typeof window !== 'undefined') {
+  const flush = (): void => {
+    if (!iosTapPending) return;
+    iosTapPending = false;
+    iosTick();
+  };
+  for (const ev of ['touchend', 'pointerup', 'click'] as const) window.addEventListener(ev, flush, { capture: true, passive: true });
+}
 
 /** Rumble any connected pad that has a motor (Chrome / Edge / Firefox "dual-rumble"). */
 function rumblePads(pattern: readonly number[], priority: number): void {
@@ -154,8 +168,13 @@ export const Haptics = {
         return;
       }
       if (isIOS()) {
-        // One tick per "on" segment. The first one runs synchronously: Safari only lets the switch
-        // tick inside the user's touch, and a setTimeout (even 0 ms) leaves that gesture behind.
+        // a button tap ticks when the finger lifts: that's the moment Safari allows it
+        if (kind === 'tap') {
+          iosTapPending = true;
+          return;
+        }
+        // Anything else (a hit, a power-up) happens in the game loop, outside any touch. Try
+        // anyway, one tick per "on" segment; Safari may stay silent, and it never throws.
         let t = 0;
         pattern.forEach((ms, i) => {
           if (i % 2 === 0) {
