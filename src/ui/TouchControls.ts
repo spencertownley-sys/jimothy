@@ -2,6 +2,7 @@ import { Haptics } from '../core/haptics';
 import { getInput } from '../core/input';
 import type { InputKey } from '../core/input/InputState';
 import { AudioManager } from '../core/audio/AudioManager';
+import { dpadKeys } from './dpad';
 
 /** True on phones/tablets, or when forced via ?touch=1 for desktop testing. */
 export function wantsTouchControls(): boolean {
@@ -69,7 +70,7 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
   const pause = button('jt-btn jt-pause', 'Pause');
   const dpad = button('jt-btn jt-dpad', 'Direction pad');
   left.append(pause, spacer(), dpad);
-  holdButton(pause, 'start');
+  holdButton(pause, 'start', 'pause');
   dpadControl(dpad);
 
   // right: jump on top, B and A below
@@ -80,9 +81,9 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
   const a = button('jt-btn jt-a', 'A: throw');
   row.append(b, a);
   right.append(spacer(), jump, row);
-  holdButton(jump, 'jump');
-  holdButton(a, 'a');
-  holdButton(b, 'b');
+  holdButton(jump, 'jump', 'jumpButton');
+  holdButton(a, 'a', 'aButton');
+  holdButton(b, 'b', 'bButton');
 
   // never let a stuck finger keep Jimothy running
   window.addEventListener('blur', () => touch.clear());
@@ -113,7 +114,9 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
     AudioManager.unlock();
   }
 
-  function holdButton(el: HTMLElement, key: InputKey): void {
+  // Each control holds its keys under its own name (see TouchSource): the d-pad letting go of
+  // `jump` must never release the Jump button a second thumb is still pressing.
+  function holdButton(el: HTMLElement, key: InputKey, owner: string): void {
     const pointers = new Set<number>();
     const update = (): void => {
       el.classList.toggle('is-down', pointers.size > 0);
@@ -122,54 +125,55 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
       e.preventDefault();
       firstTouch();
       el.setPointerCapture?.(e.pointerId);
-      if (pointers.size === 0) {
-        touch.press(key);
-        Haptics.pulse('tap');
-      }
+      if (pointers.size === 0) Haptics.pulse('tap');
+      // press every time (it's idempotent): if a lost pointerup left `pointers` stale, the button
+      // must still work on the next touch
+      touch.press(key, owner);
       pointers.add(e.pointerId);
       update();
     });
     const up = (e: PointerEvent): void => {
       pointers.delete(e.pointerId);
-      if (pointers.size === 0) touch.release(key);
+      if (pointers.size === 0) touch.release(key, owner);
       update();
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
     el.addEventListener('lostpointercapture', up);
+    // touch.clear() on blur drops the key; forget the fingers too so the next touch starts clean
+    window.addEventListener('blur', () => {
+      pointers.clear();
+      update();
+    });
   }
 
   function dpadControl(el: HTMLElement): void {
+    const OWNER = 'dpad';
     let pointer: number | null = null;
-    let last = '';
+    let keys: InputKey[] = [];
+    const show = (): void => {
+      el.classList.toggle('d-left', keys.includes('left'));
+      el.classList.toggle('d-right', keys.includes('right'));
+      el.classList.toggle('d-down', keys.includes('down'));
+      el.classList.toggle('d-up', keys.includes('jump'));
+    };
     const apply = (e: PointerEvent): void => {
       const r = el.getBoundingClientRect();
       // -1..1 from the d-pad centre
       const dx = ((e.clientX - r.left) / r.width) * 2 - 1;
       const dy = ((e.clientY - r.top) / r.height) * 2 - 1;
-      const keys: InputKey[] = [];
-      if (Math.hypot(dx, dy) > 0.2) {
-        if (dx < -0.3) keys.push('left');
-        if (dx > 0.3) keys.push('right');
-        if (dy > 0.35) keys.push('down');
-        if (dy < -0.45 && Math.abs(dx) < 0.55) keys.push('jump');
-      }
-      const sig = keys.join(',');
-      if (sig !== last) {
-        if (keys.length) Haptics.pulse('tap');
-        last = sig;
-      }
-      touch.setHeld(keys, DIRS);
-      el.classList.remove('d-left', 'd-right', 'd-down', 'd-up');
-      if (keys.includes('left')) el.classList.add('d-left');
-      if (keys.includes('right')) el.classList.add('d-right');
-      if (keys.includes('down')) el.classList.add('d-down');
-      if (keys.includes('jump')) el.classList.add('d-up');
+      const next = dpadKeys(dx, dy, keys);
+      // a buzz each time the thumb rolls onto a new direction, like the click of a real d-pad
+      if (next.some((k) => !keys.includes(k))) Haptics.pulse('tap');
+      keys = next;
+      touch.setHeld(keys, DIRS, OWNER);
+      show();
     };
     el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       firstTouch();
       pointer = e.pointerId;
+      keys = [];
       el.setPointerCapture?.(e.pointerId);
       apply(e);
     });
@@ -179,9 +183,9 @@ export function mountTouchPanels(gameEl: HTMLElement): void {
     const end = (e: PointerEvent): void => {
       if (e.pointerId !== pointer) return;
       pointer = null;
-      last = '';
-      touch.setHeld([], DIRS);
-      el.classList.remove('d-left', 'd-right', 'd-down', 'd-up');
+      keys = [];
+      touch.setHeld([], DIRS, OWNER);
+      show();
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);

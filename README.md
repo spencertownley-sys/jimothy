@@ -41,6 +41,14 @@ future Capacitor app; iPhone Safari gets a light tick where supported; browsers 
 (including pages embedded in a cross-origin frame) just skip it.
 Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 
+**Route review** (Title → Route Review, Pause → Watch the route, or `?review=1-2`): watch any
+level played the intended way, with captions for each beat (blocks, geoducks, bosses, things to
+wait for). Jimothy can't be hurt or lose a life in it, and nothing is saved. ← → jump between
+beats, ↑ ↓ change speed (¼× to 4×), Space plays/pauses, A / S skip ∓3 s, click the timeline to
+seek, Esc exits. The level runs for real and replays deterministically, so rewinding is exact.
+Routes live in `src/review/routes.ts`; `node scripts/dev/review.mjs [level] [--look 12,20]` charts
+them headlessly and reports whether each clears with every geoduck.
+
 ## Scripts
 
 | Command | What it does |
@@ -51,6 +59,7 @@ Backtick toggles the debug overlay; `?debug=1` draws physics bodies.
 | `npm run gen:art` | builds every sprite, the tilesets (Ballard, lock wall, beach, market, gum alley, pier, plaza), water and parallax layers, world maps and story panels from the Higgsfield images (needs ImageMagick) |
 | `npm run pack:atlases` | packs `art/sprites/*` into `public/assets/atlases/*.png + .json` |
 | `npm run gen:level` | regenerates the World 1–3 maps (`1-1`, `1-1-bonus`, `1-2`, `1-3`, `2-1`, `2-2`, `2-3`, `3-1`, `3-2`, `3-3`) in `public/assets/maps/` from `scripts/gen-level.mjs` |
+| `node scripts/dev/review.mjs` | charts every level's review route and fails if one doesn't clear cleanly (`--look 12,20 --shots dir` screenshots moments) |
 | `node scripts/dev/flow.mjs out/` | dev probe that drives the built game through the whole 1-1 flow and screenshots each screen |
 
 ## Layout

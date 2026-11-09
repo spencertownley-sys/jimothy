@@ -31,6 +31,9 @@ export const CONFIG = {
   RUN_JUMP_THRESHOLD: 350,
   COYOTE_MS: 90,
   JUMP_BUFFER_MS: 120,
+  // after leaving the ground he counts as airborne while rising, even if a collision still says
+  // "touching" (the platform under him rising, the see-saw he just left)
+  JUMP_TAKEOFF_MS: 80,
   STOMP_BOUNCE: -420,
   STOMP_BOUNCE_HELD: -640,
   SKID_MIN_SPEED: 150,

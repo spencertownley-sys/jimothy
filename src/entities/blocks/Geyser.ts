@@ -22,7 +22,7 @@ export class Geyser {
 
   constructor(
     private scene: Phaser.Scene,
-    private x: number,
+    readonly x: number,
     private groundY: number,
     heightTiles: number,
     phaseMs: number,
@@ -36,6 +36,15 @@ export class Geyser {
     this.jet = scene.add.image(x, groundY - 6, 'blocks', 'geyser_jet').setOrigin(0.5, 1).setDepth(9).setAlpha(0.92);
     this.jetW = 0.62 * nozzles;
     this.jet.setScale(this.jetW, 0.02).setVisible(false);
+  }
+
+  /** ms into the 2 s cycle, and whether the jet is up (route review reads these) */
+  get cycleMs(): number {
+    return this.t;
+  }
+
+  get firing(): boolean {
+    return this.mode === 'on';
   }
 
   private get near(): boolean {

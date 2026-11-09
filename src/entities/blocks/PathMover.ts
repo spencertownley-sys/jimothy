@@ -69,6 +69,12 @@ export class PathMover extends Phaser.Physics.Arcade.Sprite {
     if (!force) this.onShow?.(p.visible, p);
   }
 
+  /** Route review: how long until it's next out of the fishmonger's hands (0 = flying now). */
+  msUntilShown(stepMs: number, maxMs = 6000): number {
+    for (let dt = 0; dt <= maxMs; dt += stepMs) if (this.path(this.t + dt).visible) return dt;
+    return Infinity;
+  }
+
   fixedUpdate(dtMs: number): void {
     this.t += dtMs;
     const p = this.path(this.t);

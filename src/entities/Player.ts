@@ -6,6 +6,9 @@ import type { InputState } from '../core/input/InputState';
 import { jumpGravityScale, startJump, type JumpState } from '../core/physics/jump';
 import { powerAfterHit, type PowerUpKind } from '../data/powerups';
 
+/** What hit him; birds get their own peck-peck-thump buzz. */
+export type HurtCause = 'bird' | 'other';
+
 export type PlayerFsm =
   | 'Idle' | 'Run' | 'Jump' | 'Fall' | 'Crouch' | 'CrouchWalk' | 'Skid'
   | 'Hurt' | 'Dead' | 'Grow' | 'Shrink' | 'Throw' | 'Victory';
@@ -19,6 +22,8 @@ export interface PlayerHost {
   onFlannel(active: boolean): void;
   onExtraLife(): void;
   onThrow(x: number, y: number, dir: 1 | -1): void;
+  /** god mode (route review): called instead of dying */
+  rescue?(): void;
 }
 
 const approach = (v: number, target: number, step: number): number =>
@@ -36,6 +41,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   onWet = false;
   /** pressing into the sticky gum wall: slide down it slowly */
   wallSlide = false;
+  /** route review: nothing hurts, shoves or kills him (a would-be death calls host.rescue) */
+  god = false;
   /** hits taken this life (the goose fight's no-damage geoduck reads it) */
   hitsTaken = 0;
   /** sideways speed borrowed from the platform he's riding this step (the scene adds and removes it) */
@@ -84,7 +91,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   get invulnerable(): boolean {
-    return this.iframesMs > 0 || this.flannelMs > 0;
+    return this.iframesMs > 0 || this.flannelMs > 0 || this.god;
   }
 
   /** Called once per physics step from the scene. Never reads delta for logic; dtMs is the fixed step. */
@@ -121,7 +128,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (grounded) {
       this.coyoteMs = CONFIG.COYOTE_MS;
       if (!this.wasGrounded) AudioManager.sfx('land');
-      this.jump.jumping = false;
+      // only a real landing ends the jump; a rising platform can still flag "touching" the step
+      // after takeoff, and dropping the hold bookkeeping there turned a full jump into a short one
+      if (this.body.velocity.y >= 0) this.jump.jumping = false;
     } else {
       this.coyoteMs -= dtMs;
     }
@@ -163,6 +172,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.body.setVelocityY(this.jump.vy);
       this.bufferMs = 0;
       this.coyoteMs = 0;
+      this.launchMs = CONFIG.JUMP_TAKEOFF_MS;
       AudioManager.sfx('jump');
     }
     this.jump.vy = this.body.velocity.y;
@@ -315,13 +325,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Thrown upward by something else (stomp, see-saw). Holding jump keeps the floaty rise. */
   launch(vy: number, held: boolean): void {
     this.body.setVelocityY(vy);
-    this.launchMs = 80;
+    this.launchMs = CONFIG.JUMP_TAKEOFF_MS;
     this.jump = { vy, holdMs: CONFIG.JUMP_HOLD_MS, jumping: true, cut: !held };
     this.coyoteMs = 0;
   }
 
   /** Returns true if the hit landed (false while invulnerable / frozen / dead). */
-  hurt(): boolean {
+  hurt(cause: HurtCause = 'other'): boolean {
+    if (this.god) return false;
     if (this.invulnerable || this.fsm === 'Dead' || this.fsm === 'Victory' || this.freezeMs > 0) return false;
     const next = powerAfterHit(this.power);
     this.hitsTaken += 1;
@@ -330,7 +341,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return true;
     }
     AudioManager.sfx('hurt');
-    Haptics.pulse('hurt');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'hurt');
     this.power = next;
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     this.freezeMs = CONFIG.GROW_FREEZE_MS;
@@ -342,16 +353,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Freeze-pulse style shove: no damage, short i-frames so pulses can't chain-stun. */
-  knockback(dirX: 1 | -1, speed: number): void {
-    if (this.fsm === 'Dead' || this.fsm === 'Victory') return;
+  knockback(dirX: 1 | -1, speed: number, cause: HurtCause = 'other'): void {
+    if (this.fsm === 'Dead' || this.fsm === 'Victory' || this.god) return;
     this.body.setVelocity(dirX * speed, -260);
     this.carryVx = 0; // the shove replaces whatever he was riding
-    Haptics.pulse('stomp');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'stomp');
     if (this.iframesMs < CONFIG.KNOCKBACK_IFRAMES_MS) this.iframesMs = CONFIG.KNOCKBACK_IFRAMES_MS;
   }
 
   die(): void {
     if (this.fsm === 'Dead') return;
+    if (this.god) {
+      this.host.rescue?.();
+      return;
+    }
     this.fsm = 'Dead';
     this.carryVx = 0;
     this.crouching = false;
@@ -419,12 +434,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** The seagull flock steals his power-up: back to small, no damage, short i-frames. */
-  stripPower(): boolean {
-    if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable) return false;
+  stripPower(cause: HurtCause = 'other'): boolean {
+    if (this.power === 'small' || this.fsm === 'Dead' || this.invulnerable || this.god) return false;
     this.setPower('small', 'Shrink');
     this.iframesMs = CONFIG.HURT_IFRAMES_MS;
     AudioManager.sfx('hurt');
-    Haptics.pulse('hurt');
+    Haptics.pulse(cause === 'bird' ? 'peck' : 'hurt');
     return true;
   }
 

@@ -307,8 +307,11 @@ class AudioManagerImpl {
     this.applyVolumes();
   }
 
+  /** Route review fast-forwards hundreds of steps at once; sound effects sit that out. */
+  quiet = false;
+
   sfx(name: string): void {
-    if (!this.ctx || !this.sfxBus) return;
+    if (!this.ctx || !this.sfxBus || this.quiet) return;
     const sample = SAMPLE_SFX[name];
     const buffer = sample ? this.buffers.get(sample.file) : undefined;
     if (sample && buffer) {

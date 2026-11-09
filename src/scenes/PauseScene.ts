@@ -30,9 +30,10 @@ export class PauseScene extends Phaser.Scene {
     this.menu = new Menu(this, W / 2 - 180, H / 2 - 80, [
       { label: 'Resume', onSelect: () => this.resume() },
       { label: 'Restart level', onSelect: () => this.restart() },
+      { label: 'Watch the route', onSelect: () => this.watchRoute() },
       { label: 'Options', onSelect: () => this.scene.start('Options', { back: 'Pause', levelId: this.levelId, resumeGame: true }) },
       { label: 'World Map', onSelect: () => this.toMap() },
-    ], { gap: 54, fontSize: 30 });
+    ], { gap: 50, fontSize: 30 });
     this.menu.onCancel = () => this.resume();
     this.input_.reset();
   }
@@ -64,6 +65,15 @@ export class PauseScene extends Phaser.Scene {
     this.scene.stop();
     const game = this.scene.get('Game');
     game.scene.restart({ levelId: this.levelId, spawn: 'start' });
+  }
+
+  /** Route review of this level; leaving it puts you back in at your last checkpoint. */
+  private watchRoute(): void {
+    AudioManager.setPaused(false);
+    this.scene.stop();
+    this.scene.stop('HUD');
+    this.scene.stop('Game');
+    this.scene.start('Review', { levelId: this.levelId, back: 'game' });
   }
 
   private toMap(): void {
