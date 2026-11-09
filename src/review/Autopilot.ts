@@ -141,14 +141,15 @@ export class Autopilot {
       } else if (dir > 0) out.right = true;
       else if (dir < 0) out.left = true;
       out.b = cmd.sprint === true;
+      // keep: hold the button through the landing too (see-saws and bounce pads launch higher),
+      // including the step this instruction hands over, or that one step would cut the launch
+      if (cmd.keep && (this.jumping || this.leftGround)) out.jump = true;
       if (this.leftGround && cmd.done?.(gs)) return true;
       if (!this.jumping && !this.leftGround) {
         if (grounded && !this.wasJumpDown) this.startJump(out, cmd.jump);
         return false;
       }
-      // keep: hold the button all the way down too (see-saws and bounce pads launch higher)
-      if (cmd.keep) out.jump = true;
-      else this.holdJump(out, p.body.velocity.y);
+      if (!cmd.keep) this.holdJump(out, p.body.velocity.y);
       if (!grounded) this.leftGround = true;
       return this.leftGround && grounded && p.body.velocity.y >= 0;
     }
