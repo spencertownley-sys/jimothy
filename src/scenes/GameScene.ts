@@ -1539,7 +1539,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
    * where it is in its cycle. `leg` is the Mover leg index (gates: 0 up, 1 lowering, 2 down,
    * 3 rising; salmon: 0 under, 1 leaping, 2 holding at the top, 3 falling).
    */
-  reviewMover(col: number): { x: number; top: number; leg: number; progress: number; visible: boolean } | undefined {
+  reviewMover(col: number): { x: number; top: number; vx: number; vy: number; leg: number; progress: number; visible: boolean; msToShow: number } | undefined {
     const x = col * CONFIG.TILE + CONFIG.TILE / 2;
     let best: Ride | undefined;
     for (const m of this.movers) if (!best || Math.abs(m.x - x) < Math.abs(best.x - x)) best = m;
@@ -1547,9 +1547,12 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     return {
       x: best.body.center.x,
       top: best.body.top,
+      vx: best.body.velocity.x,
+      vy: best.body.velocity.y,
       leg: best instanceof Mover ? best.legIndex : 0,
       progress: best instanceof Mover ? best.progress : 0,
       visible: best.visible,
+      msToShow: best instanceof PathMover ? best.msUntilShown(1000 / CONFIG.FIXED_FPS) : 0,
     };
   }
 

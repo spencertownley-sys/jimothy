@@ -11,6 +11,29 @@ const SALMON_TOP = 2;
 
 const leg = (col: number, n: number) => (gs: GameScene): boolean => gs.reviewMover(col)?.leg === n;
 
+/** The column a moving platform near `col` is at right now (to jump onto it). */
+const moverCol = (col: number) => (gs: GameScene): number => (gs.reviewMover(col)?.x ?? col * T) / T - 0.5;
+
+/**
+ * A salmon toss from the left fishmonger at `handCol` is `ms` from leaving his hands. The fish is
+ * solid only from above and climbs faster than Jimothy, so the way on is to jump *before* the
+ * throw: he peaks just as it appears under him and lands on it on the way up.
+ */
+const throwIn = (handCol: number, ms: number) => (gs: GameScene): boolean => {
+  const m = gs.reviewMover(handCol + 3);
+  return Boolean(m && !m.visible && Math.abs(m.x - (handCol * T + T / 2)) < 2 * T && m.msToShow <= ms);
+};
+
+/** Board a salmon toss: stand under the hand, jump just before the throw, ride it to `offCol`. */
+function rideToss(handCol: number, standCol: number, offCol: number, note: string): RouteCmd[] {
+  return [
+    { to: standCol, tol: 8, note },
+    { until: throwIn(handCol, 420), note: 'Jump just before the throw…' },
+    { jump: 300, to: moverCol(handCol + 3), done: (gs) => gs.player.lastGrounded },
+    { until: (gs) => gs.player.x > offCol * T || !gs.player.lastGrounded, note: 'Ride it' },
+  ];
+}
+
 /** A live enemy of this kind within `range` px of the column. */
 const enemyNear = (gs: GameScene, id: string, col: number, range: number) =>
   gs.enemySnapshot().find((e) => e.id === id && e.alive && Math.abs(e.x - (col * T + T / 2)) < range);
@@ -114,6 +137,34 @@ export const ROUTES: Record<string, RouteCmd[]> = {
     { to: 233.9, tol: 6, noJump: true },
     { jump: 300, dir: 0 },
     { to: 258, note: 'Paddle off in the kayak' },
+  ],
+  '2-1': [
+    { note: 'Pike Place: fishmongers lob salmon across the gaps. Ride one' },
+    ...rideToss(31, 31.4, 39.5, 'Stand under the fishmonger'),
+    { to: 56, note: 'Bonk the ? block: Teriyaki' },
+    { jump: 300 },
+    { wait: 600 },
+    { to: 59 },
+    { to: 69, note: 'Over the Freeze on the stall awning' },
+    ...rideToss(84, 84.4, 89.5, 'The long throw: ride it to its peak'),
+    { until: (gs) => gs.player.lastGrounded && gs.player.y < 5 * T, max: 4000, note: 'It drops you on the upper arcade' },
+    { to: 93, note: 'Geoduck #1' },
+    { to: 110 },
+    { to: 136, note: 'Dahlia buckets bounce you up to the flower-stall roofs' },
+    { to: 143.5, note: 'The brass pig: stand on it for three seconds' },
+    { wait: 3300 },
+    { to: 172, note: 'Ten lattes. Checkpoint, then the second toss' },
+    ...rideToss(176, 175.3, 184.5, 'Second toss over the gap'),
+    { to: 196, note: 'Bump the fish-ice display from below: Geoduck #2' },
+    { jump: 300 },
+    { to: 189, noJump: true, note: 'Back up, then a running jump onto the display' },
+    { to: 191.6, sprint: true, noJump: true, tol: 20 },
+    { jump: 300, to: 196, sprint: true },
+    { to: 238, note: 'Over the crow line' },
+    { jump: 300, to: 241, keep: true, done: (gs) => gs.player.body.velocity.y < -950, note: 'Bounce on the dahlias holding jump: up to the Sanitary Market walkway' },
+    { to: 245, air: true, holdJump: true },
+    { to: 262, noJump: true, note: 'Geoduck #3 behind the crow nest' },
+    { to: 310, note: 'Out on the delivery hand truck' },
   ],
   '1-1-bonus': [
     { note: 'Storm Drain: lattes along the pipes' },
