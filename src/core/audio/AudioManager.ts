@@ -247,8 +247,19 @@ class AudioManagerImpl {
   /** Must be called from a user gesture (any first input) — Web Audio starts suspended. */
   unlock(): void {
     if (this.unlocked) {
-      if (this.ctx && this.ctx.state === 'suspended') void this.ctx.resume();
+      // 'suspended' until a real gesture; iOS also reports 'interrupted' after a call or alarm
+      if (this.ctx && this.ctx.state !== 'running' && this.ctx.state !== 'closed') void this.ctx.resume().catch(() => undefined);
       return;
+    }
+    // iPhone: Web Audio is muted by the ring/silent switch unless the page declares it plays
+    // media (Safari 16.4+). Games are media; play like a video does.
+    const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+    if (session) {
+      try {
+        session.type = 'playback';
+      } catch {
+        /* older Safari */
+      }
     }
     try {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -263,7 +274,7 @@ class AudioManagerImpl {
       this.unlocked = true;
       this.applyVolumes();
       this.applyMasterGain();
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => undefined);
       for (const file of [...this.raw.keys()]) this.decode(file);
       if (this.wantedMusic) this.startMusic(this.wantedMusic);
     } catch (err) {
@@ -279,6 +290,11 @@ class AudioManagerImpl {
   /** test hook: which music key is actually playing */
   get playing(): string | null {
     return this.current?.key ?? null;
+  }
+
+  /** test hook: the AudioContext's state ('running' means sound can actually play) */
+  get contextState(): string {
+    return this.ctx?.state ?? 'none';
   }
 
   get isUnlocked(): boolean {

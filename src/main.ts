@@ -58,8 +58,10 @@ const game = new Phaser.Game({
 // Start fetching music and sound effects right away; they decode on the first input.
 AudioManager.preload('assets/audio/');
 
-// Web Audio needs a user gesture: route *every* first input through unlock().
-for (const ev of ['keydown', 'pointerdown', 'touchstart'] as const) {
+// Web Audio needs a user gesture: route every input through unlock(). Phones only count a finger
+// *lifting* (touchend / pointerup / click) as a gesture, so those are the ones that matter there;
+// a finger landing (pointerdown / touchstart) is too early and the audio stays locked.
+for (const ev of ['keydown', 'pointerdown', 'touchstart', 'pointerup', 'touchend', 'click'] as const) {
   window.addEventListener(ev, () => AudioManager.unlock(), { capture: true, passive: true });
 }
 window.addEventListener('visibilitychange', () => {
@@ -77,7 +79,7 @@ window.addEventListener('visibilitychange', () => {
 // test hooks (Playwright reads these)
 declare global {
   interface Window {
-    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null }; activeScenes: () => string[]; start: (scene: string, data?: object) => void; geoducks: () => boolean[]; review: () => ReturnType<ReviewScene['status']> | undefined };
+    __jimothy?: { game: Phaser.Game; player: () => { x: number; y: number; fsm: string } | undefined; debug: () => string; levelId: () => string; teleport: (x: number, y: number) => void; power: (kind: 'teriyaki' | 'jacket' | 'flannel' | 'star' | 'doubleshot') => void; items: () => { kind: string; x: number; y: number }[]; enemies: () => { x: number; y: number; alive: boolean; id: string }[]; audio: () => { files: Record<string, string>; playing: string | null; context: string }; activeScenes: () => string[]; start: (scene: string, data?: object) => void; geoducks: () => boolean[]; review: () => ReturnType<ReviewScene['status']> | undefined };
   }
 }
 window.__jimothy = {
@@ -111,7 +113,7 @@ window.__jimothy = {
     const s = game.scene.getScene('Game') as GameScene | null;
     return s && game.scene.isActive('Game') ? s.enemySnapshot() : [];
   },
-  audio: () => ({ files: AudioManager.status(), playing: AudioManager.playing }),
+  audio: () => ({ files: AudioManager.status(), playing: AudioManager.playing, context: AudioManager.contextState }),
   activeScenes: () => game.scene.getScenes(true).map((s) => s.scene.key),
   /** jump straight to a scene, e.g. start('Game', { levelId: '1-2' }) or start('Intro', { story: '1-3' }) */
   start: (scene, data) => {
