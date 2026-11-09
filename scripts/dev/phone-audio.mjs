@@ -1,4 +1,4 @@
-/* global navigator */
+/* global navigator, document, Navigator */
 // Dev probe: on an emulated phone, tap through the title and report whether Web Audio is
 // actually running (browsers only allow it after a finger-up, not a finger-down).
 // usage: node scripts/dev/phone-audio.mjs [device name]
