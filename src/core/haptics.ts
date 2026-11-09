@@ -133,6 +133,14 @@ export const Haptics = {
   /** the route review is something you watch: nothing buzzes while it plays */
   muted: false,
 
+  /**
+   * iPhone (no Vibration API): the on-screen buttons carry real iOS switches that tick under the
+   * finger (ui/TouchControls), so a button tap needs nothing from here.
+   */
+  get iosNative(): boolean {
+    return isIOS();
+  },
+
   enabled(): boolean {
     return !this.muted && Save.get().options.haptics;
   },
@@ -168,9 +176,10 @@ export const Haptics = {
         return;
       }
       if (isIOS()) {
-        // a button tap ticks when the finger lifts: that's the moment Safari allows it
+        // a button tap ticks natively, from the switch under the finger (ui/TouchControls); a tap
+        // from anywhere else ticks from code when the finger lifts, the moment Safari allows it
         if (kind === 'tap') {
-          iosTapPending = true;
+          if (!document.querySelector('.jt-tick')) iosTapPending = true;
           return;
         }
         // Anything else (a hit, a power-up) happens in the game loop, outside any touch. Try

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jimothy haptics test</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; font: 17px/1.4 -apple-system, system-ui, sans-serif; background: #1f3a33; color: #f4efe6; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { margin: 4px 0 16px; color: #b8c9ce; }
+  .t { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; margin: 0 0 12px; border-radius: 12px; background: #2c3e38; border: 2px solid #8a6a40; min-height: 48px; user-select: none; -webkit-user-select: none; }
+  .t b { color: #f2b35b; margin-right: 6px; }
+  .n { color: #b8c9ce; font-variant-numeric: tabular-nums; }
+  .cover { position: absolute; inset: 0; opacity: 0.01; }
+  .cover input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; }
+  #ua { font-size: 13px; color: #8e8a86; word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>Haptics test</h1>
+<p>Tap each box once and note which ones you <em>feel</em>. Then tell Claude the numbers that buzzed.</p>
+
+<label class="t"><span><b>1</b>A visible iOS switch (tap the switch itself)</span><input type="checkbox" switch></label>
+<div class="t" id="t2"><span><b>2</b>Invisible switch covering this box</span><span class="n">0</span><label class="cover"><input type="checkbox" switch tabindex="-1"></label></div>
+<div class="t" id="t3"><span><b>3</b>Code-clicked switch, on finger-up</span><span class="n">0</span></div>
+<div class="t" id="t4"><span><b>4</b>Code-clicked switch, on finger-down</span><span class="n">0</span></div>
+<div class="t" id="t5"><span><b>5</b>Code-clicked switch, 0.5 s after tap (like a bird hit)</span><span class="n">0</span></div>
+<div class="t" id="t6"><span><b>6</b>navigator.vibrate (Android only)</span><span class="n">0</span></div>
+<p id="ua"></p>
+<script>
+  // the technique the game used: build a hidden switch, click it from code, remove it
+  function tick() {
+    const label = document.createElement('label');
+    label.style.display = 'none';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    label.appendChild(input);
+    document.head.appendChild(label);
+    label.click();
+    label.remove();
+  }
+  const bump = (id) => { const n = document.querySelector(`#${id} .n`); n.textContent = String(Number(n.textContent) + 1); };
+  document.getElementById('t2').addEventListener('click', () => bump('t2'));
+  document.getElementById('t3').addEventListener('touchend', () => { tick(); bump('t3'); });
+  document.getElementById('t4').addEventListener('touchstart', () => { tick(); bump('t4'); }, { passive: true });
+  document.getElementById('t5').addEventListener('click', () => setTimeout(() => { tick(); bump('t5'); }, 500));
+  document.getElementById('t6').addEventListener('click', () => { bump('t6'); if (navigator.vibrate) navigator.vibrate(60); });
+  document.getElementById('ua').textContent = navigator.userAgent;
+</script>
+</body>
+</html>
