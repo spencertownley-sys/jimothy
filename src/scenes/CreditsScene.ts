@@ -19,6 +19,8 @@ const CREDITS = [
   'Unofficial fan game. Not affiliated with any person, business,',
   'or the City of Seattle. No real brands depicted.',
   '',
+  'Privacy: your progress is saved in this browser only. No tracking.',
+  '',
   'Praise Jimothy.',
 ];
 
@@ -34,7 +36,15 @@ export class CreditsScene extends Phaser.Scene {
     uiText(this, CONFIG.WIDTH / 2, 70, 'CREDITS', { fontSize: 44, color: COLORS.amber }).setOrigin(0.5);
     uiText(this, CONFIG.WIDTH / 2, 150, CREDITS.join('\n'), { fontSize: 22, align: 'center', display: false }).setOrigin(0.5, 0);
     uiText(this, CONFIG.WIDTH / 2, CONFIG.HEIGHT - 40, 'any button to go back', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(0.5);
+    this.addPrivacyLink();
     this.input_.reset();
+  }
+
+  /** The cookie notice's 'Cookie settings' control: re-opens the notice (absent inside the portfolio TV). */
+  private addPrivacyLink(): void {
+    const link = uiText(this, CONFIG.WIDTH - 24, CONFIG.HEIGHT - 40, 'Cookie settings', { fontSize: 18, color: COLORS.amber, display: false }).setOrigin(1, 0.5);
+    link.setInteractive({ useHandCursor: true });
+    link.on('pointerup', () => (window as { CookieConsent?: { open: () => void } }).CookieConsent?.open());
   }
 
   override update(): void {
