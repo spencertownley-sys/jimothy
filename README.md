@@ -1,6 +1,6 @@
 # JIMOTHY: A Seattle Story
 
-A cozy Mario-style platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
+A cozy classic platformer starring Jimothy, Ballard's short-spined raccoon. Phaser 3 +
 TypeScript + Vite; browser first, landscape phone (Capacitor) later, one codebase.
 
 **Play it:** https://spencertownley-sys.github.io/jimothy/
