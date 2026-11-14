@@ -22,7 +22,7 @@
   truck, goose honk, splash, Freeze ice pulse, scooter horn, pig oink, crow caw, elevator bell,
   salmon whoosh, fountain geyser); anything else
   is synthesized in `src/core/audio/AudioManager.ts`
-- Licence basis (all 12 music tracks and all `sfx_*` files above come from Epidemic Sound):
+- Licence basis (all 11 music tracks and all `sfx_*` files above come from Epidemic Sound):
   [PLACEHOLDER: owner to confirm the Epidemic Sound plan covers use inside a free, publicly
   distributed browser game and redistribution of the audio files in the built site, and record
   the plan name and date here]. If it does not, delete the `.mp3` files in `public/assets/audio/`
