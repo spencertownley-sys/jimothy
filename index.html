@@ -19,8 +19,9 @@
       body { display: flex; align-items: center; justify-content: center; touch-action: none; -webkit-user-select: none; user-select: none; }
       #game { width: 100vw; height: 100vh; }
       #game canvas { display: block; image-rendering: auto; }
-      #rotate { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; color: #F4EFE6;
+      #rotate { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; color: #F4EFE6;
         background: #1F3A33; font: 600 22px/1.4 "Fredoka", "Baloo 2", "Nunito", "Trebuchet MS", sans-serif; text-align: center; z-index: 10; }
+      #rotate small { display: block; }
       @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
     </style>
   </head>
