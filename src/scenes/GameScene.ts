@@ -285,7 +285,7 @@ export class GameScene extends Phaser.Scene implements PlayerHost, BlockHost, Fl
     this.padGroup = this.physics.add.staticGroup();
     this.statics = this.physics.add.staticGroup();
     this.umbrellaGroup = this.physics.add.staticGroup();
-    AudioManager.prefetchMusic(def.music);
+    AudioManager.prefetchMusic(def.music, 'flannel'); // flannel: the invincibility track can start any time
 
     // spawn point: explicit (drains) → checkpoint for this level → start
     let spawnName = data.spawn ?? 'start';
