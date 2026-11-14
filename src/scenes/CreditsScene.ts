@@ -10,13 +10,16 @@ const CREDITS = [
   'Design, art direction & words — Spencer Townley',
   'Concept art — Higgsfield (nano_banana_pro)',
   'Engine — Phaser 3 · Built with Claude Code',
-  'Placeholder music & sound — synthesized in-game',
+  'Music & sound effects: Epidemic Sound (licence basis in CREDITS.md)',
+  'Fallback sounds: synthesized in-game',
   '',
   'Jimothy is a real, wild raccoon. Please admire from a distance.',
   'Wildlife tip: if you see him, leave him be — WDFW says so too.',
   '',
   'Unofficial fan game. Not affiliated with any person, business,',
   'or the City of Seattle. No real brands depicted.',
+  '',
+  'Privacy: your progress is saved in this browser only. No tracking.',
   '',
   'Praise Jimothy.',
 ];
@@ -33,7 +36,15 @@ export class CreditsScene extends Phaser.Scene {
     uiText(this, CONFIG.WIDTH / 2, 70, 'CREDITS', { fontSize: 44, color: COLORS.amber }).setOrigin(0.5);
     uiText(this, CONFIG.WIDTH / 2, 150, CREDITS.join('\n'), { fontSize: 22, align: 'center', display: false }).setOrigin(0.5, 0);
     uiText(this, CONFIG.WIDTH / 2, CONFIG.HEIGHT - 40, 'any button to go back', { fontSize: 16, color: COLORS.mist, display: false }).setOrigin(0.5);
+    this.addPrivacyLink();
     this.input_.reset();
+  }
+
+  /** The cookie notice's 'Cookie settings' control: re-opens the notice (absent inside the portfolio TV). */
+  private addPrivacyLink(): void {
+    const link = uiText(this, CONFIG.WIDTH - 24, CONFIG.HEIGHT - 40, 'Cookie settings', { fontSize: 18, color: COLORS.amber, display: false }).setOrigin(1, 0.5);
+    link.setInteractive({ useHandCursor: true });
+    link.on('pointerup', () => (window as { CookieConsent?: { open: () => void } }).CookieConsent?.open());
   }
 
   override update(): void {

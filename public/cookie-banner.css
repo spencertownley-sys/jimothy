@@ -1,0 +1,76 @@
+/* cookie-banner.css  v1.0
+   Theme it per site by overriding these variables in your own stylesheet, e.g.
+   .cb { --cb-accent: #0f766e; --cb-accent-fg: #fff; --cb-font: 'Inter', sans-serif; } */
+.cb {
+  --cb-bg: #1F3A33;
+  --cb-fg: #f3efe2;
+  --cb-muted: #cfd8d2;
+  --cb-border: #3c5c52;
+  --cb-accent: #f3c35b;
+  --cb-accent-fg: #1F3A33;
+  --cb-radius: 10px;
+  --cb-bottom: 0px;      /* raise it above a fixed bottom bar, e.g. 72px */
+  --cb-z: 2147483000;
+
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + var(--cb-bottom) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: var(--cb-z);
+  box-sizing: border-box;
+  width: min(680px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  background: var(--cb-bg);
+  color: var(--cb-fg);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  font-family: var(--cb-font, inherit);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 400;
+  text-align: left;
+}
+/* Jimothy's palette is already dark, so light and dark modes share one theme. */
+.cb *, .cb *::before, .cb *::after { box-sizing: border-box; }
+.cb-text { flex: 1 1 260px; min-width: 0; margin: 0; color: var(--cb-fg); }
+.cb-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.cb-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cb-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: calc(var(--cb-radius) - 3px);
+  border: 1px solid var(--cb-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Accept and Reject share .cb-choice on purpose: equal size, colour and weight. */
+.cb-primary, .cb-choice { background: var(--cb-accent); color: var(--cb-accent-fg); }
+.cb-ghost { background: transparent; color: var(--cb-fg); border-color: var(--cb-border); }
+.cb-btn:hover { filter: brightness(1.12); }
+.cb-btn:focus-visible, .cb-link:focus-visible, .cb input:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: 2px;
+}
+.cb-panel { order: 3; flex: 1 1 100%; display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--cb-border); }
+.cb-panel[hidden] { display: none; }
+.cb-cat { display: flex; gap: 10px; align-items: flex-start; color: var(--cb-muted); cursor: pointer; }
+.cb-cat strong { color: var(--cb-fg); }
+.cb-cat input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--cb-accent); }
+.cb-panel .cb-btn { justify-self: start; }
+@media (max-width: 480px) {
+  .cb-actions { flex: 1 1 100%; }
+  .cb-actions .cb-btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cb { animation: cb-in 0.18s ease-out; }
+  @keyframes cb-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+}
+@media print { .cb { display: none; } }

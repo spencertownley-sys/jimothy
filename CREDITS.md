@@ -22,8 +22,12 @@
   truck, goose honk, splash, Freeze ice pulse, scooter horn, pig oink, crow caw, elevator bell,
   salmon whoosh, fountain geyser); anything else
   is synthesized in `src/core/audio/AudioManager.ts`
-- Licence check before a public release: confirm the Epidemic Sound plan covers use inside a
-  distributed game, not only in videos / social content.
+- Licence basis (all 11 music tracks and all `sfx_*` files above come from Epidemic Sound):
+  [PLACEHOLDER: owner to confirm the Epidemic Sound plan covers use inside a free, publicly
+  distributed browser game and redistribution of the audio files in the built site, and record
+  the plan name and date here]. If it does not, delete the `.mp3` files in `public/assets/audio/`
+  (the game falls back to its synthesized audio) or replace them with CC0 or generated audio,
+  then refresh the copy served from spencertownley.com.
 
 Jimothy is a real, wild raccoon. Please admire from a distance.
 This is an unofficial fan game, not affiliated with any person, business, or the City of Seattle. No real trademarks are depicted.

@@ -128,8 +128,8 @@ interface MusicFile {
   lowpass?: number;
   rate?: number;
 }
-/** Fetched at boot; every other track loads on first use. */
-const EAGER_MUSIC = ['title', 'ballard', 'flannel'];
+/** Fetched at boot (title screen only); every other track loads when its level starts. */
+const EAGER_MUSIC = ['title'];
 
 const MUSIC_FILES: Record<string, MusicFile> = {
   title: { file: 'title', gain: 0.5 }, // "Pearl City Beach" – Paper Twins
@@ -183,7 +183,7 @@ class AudioManagerImpl {
   }
 
   /**
-   * Fetch every sound effect and the World 1 music up front (no AudioContext needed). Other
+   * Fetch every sound effect and the title music up front (no AudioContext needed). Other
    * worlds' tracks are fetched the first time they're asked for (or prefetched when a level
    * loads), so boot stays small. Decoding waits for unlock(): Web Audio may only start after a
    * user gesture.
